@@ -1,0 +1,7 @@
+{
+  "utterance": "goodbye",
+  "intent_type": "CaffeineContentGoodbyeIntent",
+  "intent": {
+    "GoodbyeKeyword": "goodbye"
+  }
+}

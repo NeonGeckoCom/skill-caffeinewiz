@@ -1,0 +1,7 @@
+{
+  "utterance": "yes i do",
+  "intent_type": "YesIDoIntent",
+  "intent": {
+    "YesIDo": "yes i do"
+  }
+}

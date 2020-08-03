@@ -1,0 +1,7 @@
+{
+  "utterance": "no i do not",
+  "intent_type": "NoIntent",
+  "intent": {
+    "NoIntent": "no i do not"
+  }
+}
