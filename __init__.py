@@ -43,8 +43,8 @@ class CaffeineWizSkill(MycroftSkill):
         # self.digits = self.user_info_available['units']['measure'] \
         #     if self.user_info_available['units']['measure'] else 'imperial'
         self.results = None
-        default_config = {"lastUpdate": None}
-        self.init_settings(default_config)
+        # default_config = {"lastUpdate": None}
+        # self.init_settings(default_config)
         self.translate_drinks = {
             'pepsi': 'pepsi cola',
             # 'coke 0': 'coke zero',
