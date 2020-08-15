@@ -43,8 +43,8 @@ class CaffeineWizSkill(MycroftSkill):
         # self.digits = self.user_info_available['units']['measure'] \
         #     if self.user_info_available['units']['measure'] else 'imperial'
         self.results = None
-        default_config = {"lastUpdate": None}
-        self.init_settings(default_config)
+        # default_config = {"lastUpdate": None}
+        # self.init_settings(default_config)
         self.translate_drinks = {
             'pepsi': 'pepsi cola',
             # 'coke 0': 'coke zero',
@@ -73,8 +73,8 @@ class CaffeineWizSkill(MycroftSkill):
         try:
             # self.last_updated = datetime.datetime.strptime(self.configuration_available["devVars"]["caffeineUpdate"],
             #                                                '%Y-%m-%d %H:%M:%S.%f')
-            if self.ngi_settings.content["lastUpdate"]:
-                self.last_updated = datetime.datetime.strptime(self.ngi_settings.content["lastUpdate"],
+            if self.settings["lastUpdate"]:
+                self.last_updated = datetime.datetime.strptime(self.settings["lastUpdate"],
                                                                '%Y-%m-%d %H:%M:%S.%f')
             else:
                 self.last_updated = None
