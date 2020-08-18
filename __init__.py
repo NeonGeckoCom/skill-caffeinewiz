@@ -73,7 +73,7 @@ class CaffeineWizSkill(MycroftSkill):
         try:
             # self.last_updated = datetime.datetime.strptime(self.configuration_available["devVars"]["caffeineUpdate"],
             #                                                '%Y-%m-%d %H:%M:%S.%f')
-            if self.settings["lastUpdate"]:
+            if self.settings.get("lastUpdate"):
                 self.last_updated = datetime.datetime.strptime(self.settings["lastUpdate"],
                                                                '%Y-%m-%d %H:%M:%S.%f')
             else:
