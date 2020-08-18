@@ -73,7 +73,7 @@ class CaffeineWizSkill(MycroftSkill):
         try:
             # self.last_updated = datetime.datetime.strptime(self.configuration_available["devVars"]["caffeineUpdate"],
             #                                                '%Y-%m-%d %H:%M:%S.%f')
-            if self.settings["lastUpdate"]:
+            if self.settings.get("lastUpdate"):
                 self.last_updated = datetime.datetime.strptime(self.settings["lastUpdate"],
                                                                '%Y-%m-%d %H:%M:%S.%f')
             else:
@@ -85,29 +85,9 @@ class CaffeineWizSkill(MycroftSkill):
         LOG.debug(self.last_updated)
         # using tdelta variable and datetime module to calculate the difference between the current moment and the
         # last time the update was performed
-        tdelta = datetime.datetime.now() - self.last_updated if self.last_updated else datetime.timedelta(hours=1.1)
-        LOG.info(tdelta)
         self.from_caffeine_wiz = None
         self.from_caffeine_informer = None
-        # if more than one hour, calculate and fetch new data again:
-        if tdelta.total_seconds() > TIME_TO_CHECK \
-                or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt')).exists()\
-                or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt')).exists():
-            self.create_signal("WIZ_getting_new_content")
-            # starting a separate process because websites might take a while to respond
-            t = multiprocessing.Process(target=self.get_new_info())
-            t.start()
-        else:
-            # if less than 1 hour, unpickle saved results from the appropriate files:
-            with open(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt'),
-                      'rb') as from_caffeine_wiz_file:
-                self.from_caffeine_wiz = pickle.load(from_caffeine_wiz_file)
 
-            with open(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt'),
-                      'rb') as from_caffeine_informer_file:
-                self.from_caffeine_informer = pickle.load(from_caffeine_informer_file)
-                # combine them as in get_new_info and add rocket chocolate:
-                self.combine_and_chocolate()
         # LOG.debug(f"DM: {self.from_caffeine_informer}")
         # LOG.debug(f"DM: {self.from_caffeine_wiz}")
 
@@ -121,9 +101,10 @@ class CaffeineWizSkill(MycroftSkill):
 
     def get_new_info(self, reply=False):
         """fetches and combines new data from the two caffeine sources"""
+        time_check = datetime.datetime.now()
+
         try:
             # prep the html pages:
-            time_check = datetime.datetime.now()
             page = urllib.request.urlopen("https://www.caffeineinformer.com/the-caffeine-database").read()
             soup = BeautifulSoup(page, "html.parser")
 
@@ -179,8 +160,13 @@ class CaffeineWizSkill(MycroftSkill):
             self.combine_and_chocolate()
             # self.configuration_available["devVars"]["caffeineUpdate"] = time_check
             # self.create_signal("NGI_YAML_config_update")
-            time_check = str(time_check)
-            self.ngi_settings.update_yaml_file("lastUpdate", value=time_check)
+            # time_check = str(time_check)
+        except Exception as e:
+            LOG.error(e)
+
+        try:
+            LOG.debug(type(self.ngi_settings))
+            self.ngi_settings.update_yaml_file("lastUpdate", value=str(time_check))
             # self.local_config.update_yaml_file("devVars", "caffeineUpdate", time_check)
             self.check_for_signal("WIZ_getting_new_content")
             if reply:
@@ -211,6 +197,28 @@ class CaffeineWizSkill(MycroftSkill):
         self.disable_intent('CaffeineContentGoodbyeIntent')
         # self.disable_intent('CaffeineYesIDoIntent')
         # self.disable_intent('Caffeine_no_intent')
+
+        tdelta = datetime.datetime.now() - self.last_updated if self.last_updated else datetime.timedelta(hours=1.1)
+        LOG.info(tdelta)
+        # if more than one hour, calculate and fetch new data again:
+        if tdelta.total_seconds() > TIME_TO_CHECK \
+                or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt')).exists() \
+                or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt')).exists():
+            self.create_signal("WIZ_getting_new_content")
+            # starting a separate process because websites might take a while to respond
+            t = multiprocessing.Process(target=self.get_new_info())
+            t.start()
+        else:
+            # if less than 1 hour, unpickle saved results from the appropriate files:
+            with open(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt'),
+                      'rb') as from_caffeine_wiz_file:
+                self.from_caffeine_wiz = pickle.load(from_caffeine_wiz_file)
+
+            with open(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt'),
+                      'rb') as from_caffeine_informer_file:
+                self.from_caffeine_informer = pickle.load(from_caffeine_informer_file)
+                # combine them as in get_new_info and add rocket chocolate:
+                self.combine_and_chocolate()
 
     def handle_caffeine_update(self, message):
         LOG.debug(message)
