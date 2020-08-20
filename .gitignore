@@ -6,3 +6,5 @@
 *.pyc
 __pycache__/
 !.github/*
+drinkList_from_caffeine_informer.txt
+drinkList_from_caffeine_wiz.txt
