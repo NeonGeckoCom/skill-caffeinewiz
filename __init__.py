@@ -254,7 +254,8 @@ class CaffeineWizSkill(MycroftSkill):
         if not drink:
             self.speak("I could not understand the drink that you requested")
         elif self.check_for_signal('CORE_useHesitation', -1):
-            self.speak("Sure.")
+            self.speak_dialog('one_moment', private=True)
+            # self.speak("Sure.")
         LOG.info(f"heard: {drink}")
         drink = drink.translate({ord(i): None for i in '?:!/;@#$'}).rstrip().replace(" '", "'")
         # LOG.info(drink)
