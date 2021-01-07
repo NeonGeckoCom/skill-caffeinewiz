@@ -27,12 +27,13 @@ import urllib.request
 from os.path import join, abspath, dirname
 from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
-from NGI.utilities import beautifulSoupHelper as bU
+# from NGI.utilities import beautifulSoupHelper as bU
 from mycroft.skills.core import MycroftSkill
 from time import sleep
 # from mycroft.util import create_signal, check_for_signal
 from mycroft.util.log import LOG
 from mycroft.util.parse import normalize
+from neon_utils import stub_missing_parameters, skill_needs_patching, web_utils
 
 TIME_TO_CHECK = 3600
 
@@ -40,6 +41,10 @@ TIME_TO_CHECK = 3600
 class CaffeineWizSkill(MycroftSkill):
     def __init__(self):
         super(CaffeineWizSkill, self).__init__(name="CaffeineWizSkill")
+        if skill_needs_patching(self):
+            LOG.warning("Patching Neon skill for non-neon core")
+            stub_missing_parameters(self)
+
         # self.digits = self.user_info_available['units']['measure'] \
         #     if self.user_info_available['units']['measure'] else 'imperial'
         self.results = None
@@ -116,7 +121,7 @@ class CaffeineWizSkill(MycroftSkill):
             # 1 - using strings and ast.literal:
             raw_j2 = str(soup.find_all('script', type="text/javascript")[2])
             new_url = raw_j2[:raw_j2.rfind("function pause") - 6][raw_j2.rfind("tbldata = [") + 11:].lower()
-            new = bU.strip_tags(new_url)
+            new = web_utils.strip_tags(new_url)
             self.from_caffeine_informer = list(ast.literal_eval(new))
             # LOG.warning(self.from_caffeine_informer)
 
@@ -134,8 +139,8 @@ class CaffeineWizSkill(MycroftSkill):
             areatable = soup2.find('table')
             if areatable:
                 self.from_caffeine_wiz = list(
-                    (bU.chunks([i.text.lower().replace("\n", "")
-                                for i in areatable.findAll('td') if i.text != "\xa0"], 3)))
+                    (web_utils.chunks([i.text.lower().replace("\n", "")
+                                       for i in areatable.findAll('td') if i.text != "\xa0"], 3)))
             # LOG.warning(self.from_caffeine_wiz)
 
             # Add STT parsable names
@@ -165,14 +170,16 @@ class CaffeineWizSkill(MycroftSkill):
             LOG.error(e)
 
         try:
-            LOG.debug(type(self.ngi_settings))
-            self.ngi_settings.update_yaml_file("lastUpdate", value=str(time_check))
-            # self.local_config.update_yaml_file("devVars", "caffeineUpdate", time_check)
+            if self.neon_core:
+                LOG.debug(type(self.ngi_settings))
+                self.ngi_settings.update_yaml_file("lastUpdate", value=str(time_check))
+                # self.local_config.update_yaml_file("devVars", "caffeineUpdate", time_check)
             self.check_for_signal("WIZ_getting_new_content")
             if reply:
                 self.speak("Update completed.")
         except Exception as e:
             LOG.error("An error occurred during the CaffeineWiz update: " + str(e))
+            self.check_for_signal("WIZ_getting_new_content")
 
     def initialize(self):
         caffeine_intent = IntentBuilder("CaffeineContentIntent"). \
@@ -305,6 +312,7 @@ class CaffeineWizSkill(MycroftSkill):
                 caff_vol = str(caff_oz)
                 drink_units = 'ounces'
 
+            LOG.info(f"{drink} | {caff_mg} | {caff_vol} | {drink_units}")
             self.speak_dialog('DrinkCaffeine', {'drink': drink,
                                                 'caffeine_content': caff_mg,
                                                 'caffeine_units': 'milligrams',
