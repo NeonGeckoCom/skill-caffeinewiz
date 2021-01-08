@@ -139,7 +139,7 @@ class CaffeineWizSkill(CommonQuerySkill):
     #     self.disable_intent('CaffeineYesIDoIntent')
     #     self.disable_intent('Caffeine_no_intent')
 
-    def CQS_match_query_phrase(self, utt, message):
+    def CQS_match_query_phrase(self, utt, message=None):
         if " of " in utt:
             drink = utt.split(" of ", 1)[1]
         elif " in " in utt:
@@ -165,13 +165,17 @@ class CaffeineWizSkill(CommonQuerySkill):
     def CQS_action(self, phrase, data):
         self.make_active()
         if len(self.results) == 1:
-            self.speak("Say how about caffeine content of another drink or say goodbye.", True) if \
-                not self.check_for_signal("CORE_skipWakeWord", -1) else self.speak_dialog("StayCaffeinated")
-            self.enable_intent('CaffeineContentGoodbyeIntent')
-            self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
-        else:
+            if not self.check_for_signal("CORE_skipWakeWord", -1):
+                self.speak("Say how about caffeine content of another drink or say goodbye.", True)
+                self.enable_intent('CaffeineContentGoodbyeIntent')
+                self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
+            elif self.neon_core:
+                self.speak_dialog("StayCaffeinated")
+        elif self.neon_core:
             self.speak_dialog("MoreDrinks", expect_response=True)
             self.await_confirmation(data.get("user", "local"), "more")
+        else:
+            self.speak_dialog("StayCaffeinated")
 
     def handle_caffeine_intent(self, message):
         # flac_filename = message.data.get("flac_filename")
