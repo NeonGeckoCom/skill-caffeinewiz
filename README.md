@@ -1,7 +1,5 @@
 # <img src='./logo.svg' card_color="#FF8600" width="50" style="vertical-align:bottom" style="vertical-align:bottom">CaffeineWiz
 
-## Summary
-
 Provides the caffeine content of various drinks on request. Multiple drinks in a row are possible.
 
 ## Requirements

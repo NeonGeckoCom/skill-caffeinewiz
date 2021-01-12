@@ -21,7 +21,7 @@
     ],
     "branch": "master",
     "license": "NeonAI License v1.0",
-    "icon": "./logo.svg",
+    "icon": "logo.svg",
     "category": "Information",
     "categories": [
         "Information",
