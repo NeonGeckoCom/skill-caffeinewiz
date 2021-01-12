@@ -1,4 +1,4 @@
-# <img src='./logo.svg' card_color="#FF8600" width="50">CaffeineWiz
+# <img src='./logo.svg' card_color="#FF8600" width="50" style="vertical-align:bottom" style="vertical-align:bottom">CaffeineWiz
 
 ## Summary
 
@@ -21,9 +21,9 @@ CaffeineWiz uses [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/b
 The skill will check for updates periodically. You can modify that time period by changing `TIME_TO_CHECK` parameter on top of the file in the init.
 
 ## Examples
-* "Tell me caffeine content of pepsi."
-* "How much caffeine is in starbucks blonde?"
-* "Tell me caffeine content of rocket chocolate."
+* "Tell me caffeine content of Pepsi."
+* "How much caffeine is in Starbucks Blonde?"
+* "Tell me caffeine content of Rocket Chocolate."
 
 
 ## Location
