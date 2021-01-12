@@ -163,19 +163,18 @@ class CaffeineWizSkill(CommonQuerySkill):
         return utt, conf, to_speak, {"user": self.get_utterance_user(message)}
 
     def CQS_action(self, phrase, data):
-        self.make_active()
-        if len(self.results) == 1:
-            if not self.check_for_signal("CORE_skipWakeWord", -1):
-                self.speak("Say how about caffeine content of another drink or say goodbye.", True)
-                self.enable_intent('CaffeineContentGoodbyeIntent')
-                self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
-            elif self.neon_core:
-                self.speak_dialog("StayCaffeinated")
-        elif self.neon_core:
-            self.speak_dialog("MoreDrinks", expect_response=True)
-            self.await_confirmation(data.get("user", "local"), "more")
-        else:
-            self.speak_dialog("StayCaffeinated")
+        if self.neon_core:
+            self.make_active()
+            if len(self.results) == 1:
+                if not self.check_for_signal("CORE_skipWakeWord", -1):
+                    self.speak("Say how about caffeine content of another drink or say goodbye.", True)
+                    self.enable_intent('CaffeineContentGoodbyeIntent')
+                    self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
+                else:
+                    self.speak_dialog("StayCaffeinated")
+            else:
+                self.speak_dialog("MoreDrinks", expect_response=True)
+                self.await_confirmation(data.get("user", "local"), "more")
 
     def handle_caffeine_intent(self, message):
         # flac_filename = message.data.get("flac_filename")
