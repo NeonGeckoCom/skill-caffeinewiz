@@ -1,14 +1,12 @@
-# ![](https://0000.us/klatchat/app/files/neon_images/icons/neon_paw.png)CaffeineWiz
-
-# Summary
+# <img src='./logo.svg' card_color="#FF8600" width="50" style="vertical-align:bottom" style="vertical-align:bottom">CaffeineWiz
 
 Provides the caffeine content of various drinks on request. Multiple drinks in a row are possible.
 
-# Requirements
+## Requirements
 
 No special required packages for this skill.
 
-# Description
+## Description
 
 The skill provides the functionality to inform the user of the caffeine content of the requested drink by collecting the required information from two data sources:
 
@@ -20,34 +18,17 @@ CaffeineWiz uses [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/b
 
 The skill will check for updates periodically. You can modify that time period by changing `TIME_TO_CHECK` parameter on top of the file in the init.
 
-# How to Use
+## Examples
+* "Tell me caffeine content of Pepsi."
+* "How much caffeine is in Starbucks Blonde?"
+* "Tell me caffeine content of Rocket Chocolate."
 
-First, make your request:
 
-Say `“Hey Neon”` if you are in the wake words mode. Make sure to follow the pattern of `"how much caffeine is in"` or `"tell me caffeine content of"` and add your desired drink name.
-
-For example:
-
--   tell me caffeine content of pepsi
-    
--   how much caffeine is in starbucks blonde
-    
--   tell me caffeine content of rocket chocolate
-    
-
-Wait for Neon to reply with the information about your requested drink. The reply will come in the format of `The drink {{drink}} has {{caffeine_content}} milligrams of caffeine in {{drink_size}} ounces. Provided by CaffeineWiz.`
-
-If more than one drink is available, or more than one drink was a match, Neon will offer to read them all back to you by saying `I have more drinks that match. Would you like to hear them?` And, in addition to the phrase above, the original sentence will say `The best match is`
-
-If you have wake words turned on, Neon will ask you to `Say how about caffeine content of another drink or say goodbye.`; if you are skipping wake words, Neon will end the conversation by saying `Stay caffeinated!`
-
-  
-
-# Location
+## Location
 
     ${skills}/CaffeineWiz.neon
 
-# Files
+## Files
 
  <details>
 <summary>Click to expand.</summary>
@@ -88,11 +69,11 @@ If you have wake words turned on, Neon will ask you to `Say how about caffeine c
 
 </details> 
 
-# Class Diagram
+## Class Diagram
 
 [Click Here](https://0000.us/klatchat/app/files/neon_images/class_diagrams/CaffeineWiz.png)
 
-# Available Intents
+## Available Intents
 <details>
 <summary>Click to expand.</summary>
 <br>
@@ -156,7 +137,7 @@ If you have wake words turned on, Neon will ask you to `Say how about caffeine c
 
 </details> 
 
-# Examples
+## Details
 
 ### Text
 
@@ -180,17 +161,31 @@ or -
 
   
 
-# Troubleshooting
+## Troubleshooting
 
-If you are having trouble finding requested drink, would like to add a new drink to the database, or got a "I am sorry, " + drink + " is not on my list. Let my creators know and they will teach me new information!" from Neon, please feel free to [contact us](https://neongecko.com/ContactUs)
+If you are having trouble finding requested drink or would like to add a new drink to the database,
+please feel free to [contact us](https://neongecko.com/ContactUs).
 
+Complete lists of drinks this skill knows can be found at [CaffeineWiz.com](https://caffeinewiz.com) and 
+[caffeine informer](https://www.caffeineinformer.com/the-caffeine-database).
   
 
-# Contact Support
+## Contact Support
 
 Use the [link](https://neongecko.com/ContactUs) or [submit an issue on GitHub](https://help.github.com/en/articles/creating-an-issue)
 
-# Credits
+## Credits
 
-reginaneon [neongeckocom](https://neongecko.com/)
+@NeonGeckoCom
+@reginaneon
+@NeonDaniel
 
+## Category
+**Information**
+Daily
+
+## Tags
+#NeonGecko
+#NeonAI
+#caffeine
+#coffee
