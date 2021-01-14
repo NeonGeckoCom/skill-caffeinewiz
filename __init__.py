@@ -152,8 +152,12 @@ class CaffeineWizSkill(CommonQuerySkill):
             to_speak = self._generate_drink_dialog(drink, message)
             if self.voc_match(utt, "caffeine"):
                 conf = CQSMatchLevel.EXACT
+            elif drink.lower() in to_speak.lower().split():
+                # If the exact drink name was matched, but caffeine not requested, consider this a general match
+                conf = CQSMatchLevel.GENERAL
             else:
-                conf = CQSMatchLevel.CATEGORY
+                # We didn't match "caffeine" or an exact drink name, this request isn't for this skill
+                return None
         else:
             to_speak = self.dialog_renderer.render("NotFound", {"drink": drink})
             if self.voc_match(utt, "caffeine"):
@@ -418,6 +422,12 @@ class CaffeineWizSkill(CommonQuerySkill):
         return [i for i in self.from_caffeine_wiz if i[0] in drink or drink in i[0]]
 
     def _generate_drink_dialog(self, drink: str, message) -> str:
+        """
+        Generates the dialog and populates self.results for the requested drink
+        :param drink: raw input drink to find
+        :param message: message associated with request
+        :return: generated dialog to speak
+        """
         self.results = self._get_matching_drinks(drink)
         LOG.debug(self.results)
         if len(self.results) == 1:
