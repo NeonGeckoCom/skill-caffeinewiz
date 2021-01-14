@@ -171,7 +171,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.make_active()
             if len(self.results) == 1:
                 if not self.check_for_signal("CORE_skipWakeWord", -1):
-                    self.speak("Say how about caffeine content of another drink or say goodbye.", True)
+                    self.speak_dialog("HowAboutMore", expect_response=True)
                     self.enable_intent('CaffeineContentGoodbyeIntent')
                     self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
                 else:
@@ -192,8 +192,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         if self._drink_in_database(drink):
             self.speak(self._generate_drink_dialog(drink, message))
             if len(self.results) == 1:
-                self.speak("Say how about caffeine content of another drink or say goodbye.", True) if \
-                    not self.check_for_signal("CORE_skipWakeWord", -1) else self.speak("Stay caffeinated!")
+                self.speak_dialog("HowAboutMore", expect_response=True) if \
+                    not self.check_for_signal("CORE_skipWakeWord", -1) else self.speak_dialog("StayCaffeinated")
                 self.enable_intent('CaffeineContentGoodbyeIntent')
                 self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
             else:
@@ -243,7 +243,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         # self.disable_intent('CaffeineYesIDoIntent')
         # self.disable_intent('Caffeine_no_intent')
         # LOG.debug('3- Goodbye')
-        self.speak('Goodbye. Stay caffeinated!', False)
+        self.speak_dialog("StayCaffeinated")
 
     @staticmethod
     def _drink_convert_to_metric(total, caffeine_oz, oz):
@@ -259,8 +259,8 @@ class CaffeineWizSkill(CommonQuerySkill):
                 return False
             elif not result:
                 # User said no
-                self.speak("Say how about caffeine content of another drink or say goodbye.", True) if \
-                    not self.check_for_signal("CORE_skipWakeWord", -1) else self.speak("Stay caffeinated!")
+                self.speak_dialog("HowAboutMore", expect_response=True) if \
+                    not self.check_for_signal("CORE_skipWakeWord", -1) else self.speak_dialog("StayCaffeinated")
                 self.enable_intent('CaffeineContentGoodbyeIntent')
                 self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
                 return True
@@ -305,7 +305,7 @@ class CaffeineWizSkill(CommonQuerySkill):
 
                 self.speak_dialog('MultipleCaffeine', {'drink': drink,
                                                        'caffeine_content': caff_mg,
-                                                       'caffeine_units': 'milligrams',
+                                                       'caffeine_units': self.translate('milligrams'),
                                                        'drink_size': caff_vol,
                                                        'drink_units': drink_units})
                 spoken.append(caff_list[i][0])
@@ -395,7 +395,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                 # self.local_config.update_yaml_file("devVars", "caffeineUpdate", time_check)
             self.check_for_signal("WIZ_getting_new_content")
             if reply:
-                self.speak("Update completed.")
+                self.speak_dialog("UpdateComplete")
         except Exception as e:
             LOG.error("An error occurred during the CaffeineWiz update: " + str(e))
             self.check_for_signal("WIZ_getting_new_content")
@@ -468,7 +468,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         LOG.info(f"{drink} | {caff_mg} | {caff_vol} | {drink_units}")
         to_speak = self.dialog_renderer.render('DrinkCaffeine', {'drink': drink,
                                                                  'caffeine_content': caff_mg,
-                                                                 'caffeine_units': 'milligrams',
+                                                                 'caffeine_units': self.translate('milligrams'),
                                                                  'drink_size': caff_vol,
                                                                  'drink_units': drink_units})
         return to_speak
