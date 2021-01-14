@@ -102,12 +102,12 @@ class CaffeineWizSkill(CommonQuerySkill):
             t.start()
         else:
             # if less than 1 hour, unpickle saved results from the appropriate files:
-            with open(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt'),
-                      'rb') as from_caffeine_wiz_file:
+            with self.file_system.open('drinkList_from_caffeine_wiz.txt',
+                                       'rb') as from_caffeine_wiz_file:
                 self.from_caffeine_wiz = pickle.load(from_caffeine_wiz_file)
 
-            with open(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt'),
-                      'rb') as from_caffeine_informer_file:
+            with self.file_system.open('drinkList_from_caffeine_informer.txt',
+                                       'rb') as from_caffeine_informer_file:
                 self.from_caffeine_informer = pickle.load(from_caffeine_informer_file)
                 # combine them as in get_new_info and add rocket chocolate:
                 self._add_more_caffeine_data()
@@ -374,12 +374,12 @@ class CaffeineWizSkill(CommonQuerySkill):
 
             # LOG.info(type(self.to_g))
             # saving and pickling the results:
-            with open(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt'),
-                      'wb+') as from_caffeine_wiz_file:
+            with self.file_system.open('drinkList_from_caffeine_wiz.txt',
+                                       'wb+') as from_caffeine_wiz_file:
                 pickle.dump(self.from_caffeine_wiz, from_caffeine_wiz_file)
 
-            with open(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt'),
-                      'wb+') as from_caffeine_informer_file:
+            with self.file_system.open('drinkList_from_caffeine_informer.txt',
+                                       'wb+') as from_caffeine_informer_file:
                 pickle.dump(self.from_caffeine_informer, from_caffeine_informer_file)
             self._add_more_caffeine_data()
             # self.configuration_available["devVars"]["caffeineUpdate"] = time_check
