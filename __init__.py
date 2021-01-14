@@ -191,9 +191,11 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         if self._drink_in_database(drink):
             self.speak(self._generate_drink_dialog(drink, message))
-            if len(self.results) == 1:
-                self.speak_dialog("HowAboutMore", expect_response=True) if \
-                    not self.check_for_signal("CORE_skipWakeWord", -1) else self.speak_dialog("StayCaffeinated")
+            if len(self.results) == 1 or not self.neon_core:
+                if self.neon_core and not self.check_for_signal("CORE_skipWakeWord", -1):
+                    self.speak_dialog("HowAboutMore", expect_response=True)
+                else:
+                    self.speak_dialog("StayCaffeinated")
                 self.enable_intent('CaffeineContentGoodbyeIntent')
                 self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
             else:
