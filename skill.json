@@ -12,6 +12,13 @@
     "desktopFile": false,
     "warning": "",
     "systemDeps": false,
+    "requirements": {
+        "python": [
+            "git+https://github.com/neongeckocom/neon-skill-utils"
+        ],
+        "system": {},
+        "skill": []
+    },
     "platforms": [
         "i386",
         "x86_64",
@@ -34,6 +41,7 @@
         "coffee"
     ],
     "skillname": "CaffeineWiz",
-    "authorname": "NeonGeckoCom",
-    "foldername": "caffeinewiz.neon"
+    "authorname": "Neon",
+    "foldername": "caffeinewiz.neon",
+    "download_url": "https://api.github.com/repos/NeonGeckoCom/caffeinewiz.neon/zipball/master"
 }
