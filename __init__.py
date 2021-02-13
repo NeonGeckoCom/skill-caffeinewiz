@@ -147,7 +147,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         else:
             drink = utt
         drink = self._clean_drink_name(drink)
-
+        if not drink:
+            return None
         if self._drink_in_database(drink):
             try:
                 to_speak = self._generate_drink_dialog(drink, message)
