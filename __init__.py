@@ -400,7 +400,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         try:
             if self.neon_core:
                 LOG.debug(type(self.ngi_settings))
-                self.ngi_settings.update_yaml_file("lastUpdate", value=str(time_check))
+                self.update_skill_settings({"lastUpdate": str(time_check)}, skill_global=True)
+                # self.ngi_settings.update_yaml_file("lastUpdate", value=str(time_check))
                 # self.local_config.update_yaml_file("devVars", "caffeineUpdate", time_check)
             self.check_for_signal("WIZ_getting_new_content")
             if reply:
