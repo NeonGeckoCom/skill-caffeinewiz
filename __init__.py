@@ -258,7 +258,7 @@ class CaffeineWizSkill(CommonQuerySkill):
     def _drink_convert_to_metric(total, caffeine_oz, oz):
         return int((caffeine_oz / (oz * 29.5735)) * total)
 
-    def converse(self, utterances, lang="en-us", message=None):
+    def converse(self, message=None):
         user = self.get_utterance_user(message)
         LOG.debug(self.actions_to_confirm)
         if user in self.actions_to_confirm.keys():
