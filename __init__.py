@@ -258,7 +258,7 @@ class CaffeineWizSkill(CommonQuerySkill):
     def _drink_convert_to_metric(total, caffeine_oz, oz):
         return int((caffeine_oz / (oz * 29.5735)) * total)
 
-    def converse(self, utterances, lang="en-us", message=None):
+    def converse(self, message=None):
         user = self.get_utterance_user(message)
         LOG.debug(self.actions_to_confirm)
         if user in self.actions_to_confirm.keys():
@@ -400,7 +400,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         try:
             if self.neon_core:
                 LOG.debug(type(self.ngi_settings))
-                self.ngi_settings.update_yaml_file("lastUpdate", value=str(time_check))
+                self.update_skill_settings({"lastUpdate": str(time_check)}, skill_global=True)
+                # self.ngi_settings.update_yaml_file("lastUpdate", value=str(time_check))
                 # self.local_config.update_yaml_file("devVars", "caffeineUpdate", time_check)
             self.check_for_signal("WIZ_getting_new_content")
             if reply:
