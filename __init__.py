@@ -27,14 +27,12 @@ import urllib.request
 from os.path import join, abspath, dirname
 from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
-# from NGI.utilities import beautifulSoupHelper as bU
-from mycroft.skills import CQSMatchLevel
-from mycroft.skills import CommonQuerySkill
 from time import sleep
-# from mycroft.util import create_signal, check_for_signal
-from mycroft.util.log import LOG
+from neon_utils.skills.common_query_skill import CQSMatchLevel, CommonQuerySkill
+from neon_utils.logger import LOG
+from neon_utils import web_utils
+
 from mycroft.util.parse import normalize
-from neon_utils import stub_missing_parameters, skill_needs_patching, web_utils
 
 TIME_TO_CHECK = 3600
 
@@ -42,9 +40,9 @@ TIME_TO_CHECK = 3600
 class CaffeineWizSkill(CommonQuerySkill):
     def __init__(self):
         super(CaffeineWizSkill, self).__init__(name="CaffeineWizSkill")
-        if skill_needs_patching(self):
-            LOG.warning("Patching Neon skill for non-neon core")
-            stub_missing_parameters(self)
+        # if skill_needs_patching(self):
+        #     LOG.warning("Patching Neon skill for non-neon core")
+        #     stub_missing_parameters(self)
 
         self.results = None  # TODO: Should be dict for multi-user support DM
         self.translate_drinks = {
