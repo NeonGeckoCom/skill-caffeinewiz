@@ -94,7 +94,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         if tdelta.total_seconds() > TIME_TO_CHECK \
                 or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt')).exists() \
                 or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt')).exists():
-            self.create_signal("WIZ_getting_new_content")
+            # self.create_signal("WIZ_getting_new_content")
             # starting a separate process because websites might take a while to respond
             t = multiprocessing.Process(target=self._get_new_info())
             t.start()
@@ -266,10 +266,12 @@ class CaffeineWizSkill(CommonQuerySkill):
                 return False
             elif not result:
                 # User said no
-                self.speak_dialog("HowAboutMore", expect_response=True) if \
-                    not self.check_for_signal("CORE_skipWakeWord", -1) else self.speak_dialog("StayCaffeinated")
-                self.enable_intent('CaffeineContentGoodbyeIntent')
-                self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
+                if self.local_config.get("interface", {}).get("wake_word_enabled", True):
+                    self.speak_dialog("HowAboutMore", expect_response=True)
+                    self.enable_intent('CaffeineContentGoodbyeIntent')
+                    self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
+                else:
+                    self.speak_dialog("StayCaffeinated")
                 return True
             elif result:
                 # User said yes
@@ -277,17 +279,12 @@ class CaffeineWizSkill(CommonQuerySkill):
                 self._get_drink_text(message)
                 # self.speak(self._get_drink_text())
                 # self.speak("Provided by CaffeineWiz.")
-                self.speak("Provided by CaffeineWiz. Say how about caffeine content of another drink or say goodbye.",
-                           True) \
-                    if not self.check_for_signal("CORE_skipWakeWord", -1) else \
-                    self.speak("Provided by CaffeineWiz. Stay caffeinated!")
-                self.enable_intent('CaffeineContentGoodbyeIntent')
-                self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
+                self.speak("Provided by CaffeineWiz. Stay caffeinated!")
                 return True
         return False
 
     def stop(self):
-        self.clear_signals('WIZ')
+        pass
 
     def _get_drink_text(self, message, caff_list=None):
         cnt = 0
@@ -401,12 +398,12 @@ class CaffeineWizSkill(CommonQuerySkill):
                 self.update_skill_settings({"lastUpdate": str(time_check)}, skill_global=True)
                 # self.ngi_settings.update_yaml_file("lastUpdate", value=str(time_check))
                 # self.local_config.update_yaml_file("devVars", "caffeineUpdate", time_check)
-            self.check_for_signal("WIZ_getting_new_content")
+            # self.check_for_signal("WIZ_getting_new_content")
             if reply:
                 self.speak_dialog("UpdateComplete")
         except Exception as e:
             LOG.error("An error occurred during the CaffeineWiz update: " + str(e))
-            self.check_for_signal("WIZ_getting_new_content")
+            # self.check_for_signal("WIZ_getting_new_content")
 
     def _clean_drink_name(self, drink: str) -> [str, None]:
         if not drink:
