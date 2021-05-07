@@ -1,0 +1,8 @@
+skillMetadata:
+  sections:
+    - name: Internal Reference
+      fields:
+        - name: lastUpdate
+          type: text
+          label: Time of Last Update
+          value:
