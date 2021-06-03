@@ -27,7 +27,7 @@
         "arm64",
         "arm"
     ],
-    "branch": "master",
+    "branch": "dev",
     "license": "NeonAI License v1.0",
     "icon": "logo.svg",
     "category": "Information",
@@ -43,5 +43,5 @@
     ],
     "skillname": "CaffeineWiz",
     "authorname": "Neon",
-    "foldername": "caffeinewiz.neon"
+    "foldername": null
 }
