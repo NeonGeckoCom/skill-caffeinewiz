@@ -50,6 +50,10 @@ class TestSkill(unittest.TestCase):
         self.assertIsInstance(self.skill.translate_drinks, dict)
         self.assertIsInstance(self.skill.last_updated, datetime)
 
+        self.skill._get_new_info()
+        self.assertIsNotNone(self.skill.from_caffeine_wiz)
+        self.assertIsNotNone(self.skill.from_caffeine_informer)
+
     def test_CQS_match_query_phrase(self):
         from neon_utils.skills.common_query_skill import CQSMatchLevel
 
