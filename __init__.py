@@ -76,7 +76,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             "blue frog energy drink": "blu frog energy drink"
             }
 
-        self.last_updated = None
+        self.last_updated = None  # TODO: This should be a direct settings reference
         try:
             if self.settings.get("lastUpdate"):
                 self.last_updated = datetime.datetime.strptime(self.settings["lastUpdate"], '%Y-%m-%d %H:%M:%S.%f')
@@ -386,8 +386,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         self._add_more_caffeine_data()
 
         try:
-            if self.neon_core:
-                self.update_skill_settings({"lastUpdate": str(time_check)}, skill_global=True)
+            self.update_skill_settings({"lastUpdate": str(time_check)}, skill_global=True)
             if reply:
                 self.speak_dialog("UpdateComplete")
         except Exception as e:
