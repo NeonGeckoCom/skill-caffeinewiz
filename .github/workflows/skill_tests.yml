@@ -26,7 +26,7 @@ jobs:
           pip install -r requirements.txt
       - name: Test Skill
         run: |
-          pytest test/testcaffeinewiz.py
+          pytest test/test_caffeinewiz.py
   holmes_iv:
     strategy:
       matrix:
@@ -47,4 +47,4 @@ jobs:
           pip install -r requirements.txt
       - name: Test Skill
         run: |
-          pytest test/testcaffeinewiz.py
+          pytest test/test_caffeinewiz.py
