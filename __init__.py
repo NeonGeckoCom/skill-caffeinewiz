@@ -321,13 +321,11 @@ class CaffeineWizSkill(CommonQuerySkill):
         """fetches and combines new data from the two caffeine sources"""
         time_check = datetime.datetime.now()
 
+        # Update from caffeineinformer
         try:
             # prep the html pages:
             page = urllib.request.urlopen("https://www.caffeineinformer.com/the-caffeine-database").read()
             soup = BeautifulSoup(page, "html.parser")
-
-            htmldoc = urllib.request.urlopen("http://caffeinewiz.com/").read()
-            soup2 = BeautifulSoup(htmldoc, "html.parser")
 
             # extract the parts that we need.
             # note that the html formats are very different, so we are using 2 separate approaches:
@@ -337,8 +335,26 @@ class CaffeineWizSkill(CommonQuerySkill):
             new = web_utils.strip_tags(new_url)
             self.from_caffeine_informer = list(ast.literal_eval(new))
             # LOG.warning(self.from_caffeine_informer)
+        except Exception as e:
+            LOG.error(f"Error updating from sources: {e}")
 
-            # Add STT parsable names
+        # Update from caffeinewiz
+        try:
+            htmldoc = urllib.request.urlopen("http://caffeinewiz.com/").read()
+            soup2 = BeautifulSoup(htmldoc, "html.parser")
+
+            # 2 - by parsing the table on a given page:
+            areatable = soup2.find('table')
+            if areatable:
+                self.from_caffeine_wiz = list(
+                    (web_utils.chunks([i.text.lower().replace("\n", "")
+                                       for i in areatable.findAll('td') if i.text != "\xa0"], 3)))
+            # LOG.warning(self.from_caffeine_wiz)
+        except Exception as e:
+            LOG.error(e)
+
+        # Add Normalized drink names
+        try:
             for drink in self.from_caffeine_informer:
                 parsed_name = normalize(drink[0].replace('-', ' '))
                 if drink[0] != parsed_name:
@@ -348,15 +364,6 @@ class CaffeineWizSkill(CommonQuerySkill):
                     self.from_caffeine_informer.append(new_drink)
                     # LOG.warning(self.from_caffeine_informer[len(self.from_caffeine_informer) - 1])
 
-            # 2 - by parsing the table on a given page:
-            areatable = soup2.find('table')
-            if areatable:
-                self.from_caffeine_wiz = list(
-                    (web_utils.chunks([i.text.lower().replace("\n", "")
-                                       for i in areatable.findAll('td') if i.text != "\xa0"], 3)))
-            # LOG.warning(self.from_caffeine_wiz)
-
-            # Add STT parsable names
             for drink in self.from_caffeine_wiz:
                 parsed_name = normalize(drink[0].replace('-', ' '))
                 if drink[0] != parsed_name:
@@ -365,22 +372,18 @@ class CaffeineWizSkill(CommonQuerySkill):
                     # LOG.debug(new_drink)
                     self.from_caffeine_wiz.append(new_drink)
                     # LOG.warning(self.from_caffeine_wiz[len(self.from_caffeine_wiz) - 1])
-
-            # LOG.info(type(self.to_g))
-            # saving and pickling the results:
-            with self.file_system.open('drinkList_from_caffeine_wiz.txt',
-                                       'wb+') as from_caffeine_wiz_file:
-                pickle.dump(self.from_caffeine_wiz, from_caffeine_wiz_file)
-
-            with self.file_system.open('drinkList_from_caffeine_informer.txt',
-                                       'wb+') as from_caffeine_informer_file:
-                pickle.dump(self.from_caffeine_informer, from_caffeine_informer_file)
-            self._add_more_caffeine_data()
-            # self.configuration_available["devVars"]["caffeineUpdate"] = time_check
-            # self.create_signal("NGI_YAML_config_update")
-            # time_check = str(time_check)
         except Exception as e:
             LOG.error(e)
+
+        # saving and pickling the results:
+        with self.file_system.open('drinkList_from_caffeine_wiz.txt',
+                                   'wb+') as from_caffeine_wiz_file:
+            pickle.dump(self.from_caffeine_wiz, from_caffeine_wiz_file)
+
+        with self.file_system.open('drinkList_from_caffeine_informer.txt',
+                                   'wb+') as from_caffeine_informer_file:
+            pickle.dump(self.from_caffeine_informer, from_caffeine_informer_file)
+        self._add_more_caffeine_data()
 
         try:
             if self.neon_core:
