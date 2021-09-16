@@ -142,7 +142,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                 to_speak = self._generate_drink_dialog(drink, message)
                 if self.voc_match(utt, "caffeine"):
                     conf = CQSMatchLevel.EXACT
-                elif drink.lower() in to_speak.lower().split():
+                elif f" {drink.lower()} " in to_speak.lower():
                     # If the exact drink name was matched, but caffeine not requested, consider this a general match
                     conf = CQSMatchLevel.GENERAL
                 else:

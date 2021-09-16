@@ -1,0 +1,48 @@
+# This workflow will run unit tests
+
+name: Test Skill
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  holmes_v:
+    strategy:
+      matrix:
+        python-version: [ 3.6, 3.7, 3.8 ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Dependencies
+        run: |
+          sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git
+          pip install -r requirements.txt
+          pip install holmesV[skills]
+      - name: Test Skill
+        run: |
+          pytest test/testcaffeinewiz.py
+  holmes_iv:
+    strategy:
+      matrix:
+        python-version: [ 3.6, 3.7, 3.8 ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Dependencies
+        run: |
+          sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git
+          pip install -r requirements.txt
+          pip install holmesIV[skills]
+      - name: Test Skill
+        run: |
+          pytest test/testcaffeinewiz.py
