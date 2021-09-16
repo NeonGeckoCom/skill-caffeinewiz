@@ -9,7 +9,7 @@ jobs:
   holmes_v:
     strategy:
       matrix:
-        python-version: [ 3.6, 3.7, 3.8 ]
+        python-version: [ 3.8 ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -21,15 +21,16 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git
-          pip install -r requirements.txt
+          pip install --upgrade pip
           pip install holmesV[skills]
+          pip install -r requirements.txt
       - name: Test Skill
         run: |
           pytest test/testcaffeinewiz.py
   holmes_iv:
     strategy:
       matrix:
-        python-version: [ 3.6, 3.7, 3.8 ]
+        python-version: [ 3.8 ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -41,8 +42,9 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git
-          pip install -r requirements.txt
+          pip install --upgrade pip
           pip install holmesIV[skills]
+          pip install -r requirements.txt
       - name: Test Skill
         run: |
           pytest test/testcaffeinewiz.py
