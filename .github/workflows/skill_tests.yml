@@ -43,7 +43,7 @@ jobs:
         run: |
           sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git
           pip install --upgrade pip
-          pip install pytest mock holmesIV[skills]
+          pip install pytest mock holmesIV[skills] lingua-franca
           pip install -r requirements.txt
       - name: Test Skill
         run: |
