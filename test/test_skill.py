@@ -20,11 +20,12 @@
 import unittest
 
 from copy import deepcopy
-from os.path import dirname
+from os import mkdir
+from os.path import dirname, join, exists
 from mock import Mock
 from ovos_utils.messagebus import FakeBus
 from mycroft_bus_client import Message
-
+from neon_utils.configuration_utils import get_neon_local_config, get_neon_user_config
 from mycroft.skills.skill_loader import SkillLoader
 
 
@@ -36,6 +37,19 @@ class TestSkill(unittest.TestCase):
         skill_loader = SkillLoader(bus, dirname(dirname(__file__)))
         skill_loader.load()
         cls.skill = skill_loader.instance
+
+        # Define a directory to use for testing
+        cls.test_fs = join(dirname(__file__), "skill_fs")
+        if not exists(cls.test_fs):
+            mkdir(cls.test_fs)
+
+        # Override the configuration and fs paths to use the test directory
+        cls.skill.local_config = get_neon_local_config(cls.test_fs)
+        cls.skill.user_config = get_neon_user_config(cls.test_fs)
+        cls.skill.settings_write_path = cls.test_fs
+        cls.skill.file_system.path = cls.test_fs
+        cls.skill._init_settings()
+        cls.skill.initialize()
 
         # Override speak and speak_dialog to test passed arguments
         cls.skill.speak = Mock()
@@ -83,19 +97,78 @@ class TestSkill(unittest.TestCase):
         self.assertIsInstance(non_match[2], str)
         self.assertIsInstance(non_match[3], dict)
 
-    def test_handle_caffeine_intent(self):
+    def test_handle_caffeine_intent_valid(self):
         calls = deepcopy(self.skill.speak.call_count)
         message = Message("test_message", {"drink": "coke"}, {})
         self.skill.handle_caffeine_intent(message)
         self.assertEqual(self.skill.speak.call_count, calls + 1)
 
+    def test_handle_caffeine_intent_no_drink(self):
         message = Message("test_message", {}, {})
         self.skill.handle_caffeine_intent(message)
         self.skill.speak_dialog.assert_called_with("NoDrinkHeard")
 
+    def test_handle_caffeine_intent_invalid_drink(self):
         message = Message("test_message", {"drink": "software"}, {})
         self.skill.handle_caffeine_intent(message)
         self.skill.speak_dialog.assert_called_with("NotFound", {'drink': 'software'})
+
+    def test_handle_caffeine_update(self):
+        self.skill.handle_caffeine_update(Message(""))
+        self.skill.speak_dialog.assert_called_with("Updating")
+
+    def test_CQS_action(self):
+        # TODO: After refactor of self.results into CQS data, write this test DM
+        pass
+
+    def test_convert_metric(self):
+        # TODO: Test this conversion DM
+        pass
+
+    def test_handle_goodbye_intent(self):
+        message = Message("recognizer_loop:utterance", {"GoodbyeKeyword": "good bye"})
+        self.skill.handle_goodbye_intent(message)
+        self.skill.speak_dialog.assert_called_with("StayCaffeinated")
+
+    def test_get_drink_text(self):
+        # TODO: Write this test DM
+        pass
+
+    def test_add_more_caffeine_data(self):
+        # TODO: Write this test DM
+        pass
+
+    def test_get_new_info(self):
+        # TODO: Write this test DM
+        pass
+
+    def test_clean_drink_name(self):
+        self.assertEqual("coffee", self.skill._clean_drink_name("a coffee"))
+        self.assertEqual("coffee", self.skill._clean_drink_name("a cup of coffee"))
+        self.assertEqual("coffee", self.skill._clean_drink_name("a glass of coffee"))
+        self.assertEqual("coffee", self.skill._clean_drink_name("a cup of coffee?"))
+        self.assertEqual("coffee", self.skill._clean_drink_name("a cup of coffee"))
+        self.assertEqual("shot of espresso", self.skill._clean_drink_name("a shot of espresso"))
+
+        self.assertEqual("", self.skill._clean_drink_name("a cup of"))
+
+        self.assertEqual("", self.skill._clean_drink_name("a "))
+
+        for spoken, translated in self.skill.translate_drinks.items():
+            self.assertEqual(translated, self.skill._clean_drink_name(spoken))
+
+    def test_drink_in_database(self):
+        self.assertTrue(self.skill._drink_in_database("coke"))
+        self.assertTrue(self.skill._drink_in_database("coca-cola classic"))
+        self.assertFalse(self.skill._drink_in_database("software"))
+
+    def test_get_matching_drinks(self):
+        self.assertIsInstance(list, self.skill._get_matching_drinks("coke"))
+        self.assertIsInstance(list, self.skill._get_matching_drinks("coca-cola classic"))
+        self.assertIsInstance(list, self.skill._get_matching_drinks("software"))
+
+    def test_generate_drink_dialog(self):
+        pass
 
 
 if __name__ == '__main__':

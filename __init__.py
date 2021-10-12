@@ -64,7 +64,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             'starbucks blonde': 'starbucks coffee blonde roast',
             'starbucks blond': 'starbucks coffee blonde roast',
             'diet cherry coke': 'diet cherry coca-cola',
-            "a and w root beer": "a&w root beer",
+            "and w root beer": "a&w root beer",
             "mcdonald's coffee": "mcdonalds coffee",
             "okay energy drink": "ok energy drink",
             "vitamin water energy drink": "vitaminwater energy drink",
@@ -199,7 +199,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         else:
             self.speak_dialog("NotFound", {'drink': drink})
 
-    def convert_metric(self, caff_oz, caff_mg):
+    def convert_metric(self, caff_oz: float, caff_mg: int):
         """
         Convert from imperial to metric units
         :param caff_oz: (float) oz from lookup
@@ -243,7 +243,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.speak_dialog("StayCaffeinated")
 
     @staticmethod
-    def _drink_convert_to_metric(total, caffeine_oz, oz):
+    def _drink_convert_to_metric(total, caffeine_oz, oz):  # TODO: Annotate and simplify this method DM
         return int((caffeine_oz / (oz * 29.5735)) * total)
 
     def converse(self, message=None):
@@ -393,15 +393,25 @@ class CaffeineWizSkill(CommonQuerySkill):
             LOG.error("An error occurred during the CaffeineWiz update: " + str(e))
             # self.check_for_signal("WIZ_getting_new_content")
 
-    def _clean_drink_name(self, drink: str) -> [str, None]:
+    def _clean_drink_name(self, drink: str) -> str:
+        """
+        Normalizes an input drink name and handles known common alternative names
+        :param drink: Parsed user requested drink
+        :return: normalized drink or None if no name was parsed
+        """
         if not drink:
-            return None
+            LOG.error(f"No Drink name provided to normalize")
+            return ""
         drink = drink.lower()
-        # Strip leading "a"
-        if drink.split(maxsplit=1)[0] == "a":
-            drink.lstrip("a")
+
+        try:
+            # Strip leading "a"
+            drink = drink.split(maxsplit=1)[1] if drink.split(maxsplit=1)[0] == "a" else drink
+        except IndexError:
+            LOG.error(f"Invalid drink passed: {drink}")
+            return ""
         if drink.startswith("cup of") or drink.startswith("glass of"):
-            drink = drink.split(" of ", 1)[1]
+            drink = drink.split(" of", 1)[1].strip()
         drink = drink.translate({ord(i): None for i in '?:!/;@#$'}).rstrip().replace(" '", "'")
         # Check for common mis-matched names
         drink = self.translate_drinks.get(drink, drink)
