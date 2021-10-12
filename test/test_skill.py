@@ -65,7 +65,15 @@ class TestSkill(unittest.TestCase):
 
         self.skill._get_new_info()
         self.assertIsNotNone(self.skill.from_caffeine_wiz)
+        self.assertIsInstance(self.skill.from_caffeine_wiz, list)
         self.assertIsNotNone(self.skill.from_caffeine_informer)
+        self.assertIsInstance(self.skill.from_caffeine_informer, list)
+        self.assertTrue(all([d for d in self.skill.from_caffeine_informer if d in self.skill.from_caffeine_wiz]))
+        for d in self.skill.from_caffeine_wiz:
+            self.assertIsInstance(d, list)
+            self.assertIsInstance(d[0], str)
+            self.assertIsInstance(float(d[1]), float)
+            self.assertIsInstance(int(d[2]), int)
 
     def test_CQS_match_query_phrase(self):
         from neon_utils.skills.common_query_skill import CQSMatchLevel

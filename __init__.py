@@ -315,6 +315,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                                       self.from_caffeine_informer
                                       if str(x[:-2]) not in str(self.from_caffeine_wiz))
         sorted(self.from_caffeine_wiz)
+        self.from_caffeine_wiz.remove(["beverage", "quantity (oz)", "caffeine content (mg)"])
         # LOG.info(self.from_caffeine_wiz)
 
     def _get_new_info(self, reply=False):
