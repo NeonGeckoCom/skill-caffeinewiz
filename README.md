@@ -1,6 +1,6 @@
 # <img src='./logo.svg' card_color="#FF8600" width="50" style="vertical-align:bottom" style="vertical-align:bottom">CaffeineWiz
 
-Provides the caffeine content of various drinks on request. Multiple drinks in a row are possible.
+Provides the caffeine content of various drinks on request.
 
 ## Requirements
 
@@ -8,7 +8,8 @@ No special required packages for this skill.
 
 ## Description
 
-The skill provides the functionality to inform the user of the caffeine content of the requested drink by collecting the required information from two data sources:
+The skill provides the functionality to inform the user of the caffeine content of the requested drink (Multiple drinks in a row are possible)
+by collecting the required information from two data sources:
 
 1.  [http://caffeinewiz.com/](http://caffeinewiz.com/) - the main source of information for the drink’s database
 2.  [https://www.caffeineinformer.com/the-caffeine-database](https://www.caffeineinformer.com/the-caffeine-database) - secondary source for any non-duplicate drinks
@@ -175,10 +176,9 @@ Complete lists of drinks this skill knows can be found at [CaffeineWiz.com](http
 Use the [link](https://neongecko.com/ContactUs) or [submit an issue on GitHub](https://help.github.com/en/articles/creating-an-issue)
 
 ## Credits
-
-@NeonGeckoCom
-@reginaneon
-@NeonDaniel
+[NeonGeckoCom](https://github.com/NeonGeckoCom)
+[reginaneon](https://github.com/reginaneon)
+[NeonDaniel](https://github.com/NeonDaniel)
 
 ## Category
 **Information**
