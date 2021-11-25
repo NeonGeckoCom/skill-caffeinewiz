@@ -1,9 +1,9 @@
 {
     "title": "CaffeineWiz",
-    "url": "https://github.com/NeonGeckoCom/caffeinewiz.neon",
-    "summary": "Provides the caffeine content of various drinks on request. Multiple drinks in a row are possible.",
-    "short_description": "Provides the caffeine content of various drinks on request. Multiple drinks in a row are possible.",
-    "description": "The skill provides the functionality to inform the user of the caffeine content of the requested drink by collecting the required information from two data sources: 1.  [http://caffeinewiz.com/](http://caffeinewiz.com/) - the main source of information for the drink\u2019s database 2.  [https://www.caffeineinformer.com/the-caffeine-database](https://www.caffeineinformer.com/the-caffeine-database) - secondary source for any non-duplicate drinks CaffeineWiz uses [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) to pull the tables from the websites above, then strips the html tags, and later formats the results into the comprehensive list. That object is pickled for the future use. The skill will check for updates periodically. You can modify that time period by changing `TIME_TO_CHECK` parameter on top of the file in the init.",
+    "url": "https://github.com/NeonGeckoCom/skill-caffeinewiz.git",
+    "summary": "Provides the caffeine content of various drinks on request.",
+    "short_description": "Provides the caffeine content of various drinks on request.",
+    "description": "The skill provides the functionality to inform the user of the caffeine content of the requested drink (Multiple drinks in a row are possible) by collecting the required information from two data sources: 1.  [http://caffeinewiz.com/](http://caffeinewiz.com/) - the main source of information for the drink\u2019s database 2.  [https://www.caffeineinformer.com/the-caffeine-database](https://www.caffeineinformer.com/the-caffeine-database) - secondary source for any non-duplicate drinks CaffeineWiz uses [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) to pull the tables from the websites above, then strips the html tags, and later formats the results into the comprehensive list. That object is pickled for the future use. The skill will check for updates periodically. You can modify that time period by changing `TIME_TO_CHECK` parameter on top of the file in the init.",
     "examples": [
         "tell me caffeine content of pepsi.",
         "how much caffeine is in starbucks blonde?",
@@ -28,7 +28,7 @@
         "arm"
     ],
     "branch": "master",
-    "license": "NeonAI License v1.0",
+    "license": "BSD-3-Clause",
     "icon": "logo.svg",
     "category": "Information",
     "categories": [
@@ -36,10 +36,15 @@
         "Daily"
     ],
     "tags": [
-        "NeonGecko",
+        "NeonGecko Original",
         "NeonAI",
         "caffeine",
         "coffee"
+    ],
+    "credits": [
+        "NeonGeckoCom",
+        "reginaneon",
+        "NeonDaniel"
     ],
     "skillname": "CaffeineWiz",
     "authorname": "NeonGeckoCom",
