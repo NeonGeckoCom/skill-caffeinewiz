@@ -122,8 +122,13 @@ class TestSkill(unittest.TestCase):
         self.skill.speak_dialog.assert_called_with("NotFound", {'drink': 'software'})
 
     def test_handle_caffeine_update(self):
+        real_get_new_info = self.skill._get_new_info
+        self.skill._get_new_info = Mock()
         self.skill.handle_caffeine_update(Message(""))
         self.skill.speak_dialog.assert_called_with("Updating")
+        self.skill._get_new_info.assert_called_once_with(reply=True)
+
+        self.skill._get_new_info = real_get_new_info
 
     def test_CQS_action(self):
         # TODO: After refactor of self.results into CQS data, write this test DM
@@ -171,9 +176,9 @@ class TestSkill(unittest.TestCase):
         self.assertFalse(self.skill._drink_in_database("software"))
 
     def test_get_matching_drinks(self):
-        self.assertIsInstance(list, self.skill._get_matching_drinks("coke"))
-        self.assertIsInstance(list, self.skill._get_matching_drinks("coca-cola classic"))
-        self.assertIsInstance(list, self.skill._get_matching_drinks("software"))
+        self.assertIsInstance(self.skill._get_matching_drinks("coke"), list)
+        self.assertIsInstance(self.skill._get_matching_drinks("coca-cola classic"), list)
+        self.assertIsInstance(self.skill._get_matching_drinks("software"), list)
 
     def test_generate_drink_dialog(self):
         pass
