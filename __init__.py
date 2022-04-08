@@ -40,6 +40,7 @@ from time import sleep
 from neon_utils.skills.common_query_skill import CQSMatchLevel, CommonQuerySkill
 from neon_utils.logger import LOG
 from neon_utils import web_utils
+from neon_utils.net_utils import check_online
 
 from mycroft.util.parse import normalize
 
@@ -82,8 +83,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         except Exception as e:
             LOG.info(e)
         LOG.debug(self.last_updated)
-        self.from_caffeine_wiz = None
-        self.from_caffeine_informer = None
+        self.from_caffeine_wiz = list()
+        self.from_caffeine_informer = list()
 
     def initialize(self):
         caffeine_intent = IntentBuilder("CaffeineContentIntent").require("CaffeineKeyword").require("drink").build()
@@ -100,15 +101,16 @@ class CaffeineWizSkill(CommonQuerySkill):
         tdelta = datetime.datetime.now() - self.last_updated if self.last_updated else datetime.timedelta(hours=1.1)
         LOG.info(tdelta)
         # if more than one hour, calculate and fetch new data again:
-        if tdelta.total_seconds() > TIME_TO_CHECK \
-                or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt')).exists() \
-                or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt')).exists():
-            # self.create_signal("WIZ_getting_new_content")
+        if (tdelta.total_seconds() > TIME_TO_CHECK
+            or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt')).exists()
+            or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt')).exists()) and \
+                check_online(("https://www.caffeineinformer.com/the-caffeine-database", "http://caffeinewiz.com/")):
             # starting a separate process because websites might take a while to respond
             t = multiprocessing.Process(target=self._get_new_info())
             t.start()
         else:
-            # if less than 1 hour, unpickle saved results from the appropriate files:
+            LOG.info("Using cached caffeine data")
+            # Open cached results from the appropriate files:
             with self.file_system.open('drinkList_from_caffeine_wiz.txt',
                                        'rb') as from_caffeine_wiz_file:
                 self.from_caffeine_wiz = pickle.load(from_caffeine_wiz_file)
@@ -124,27 +126,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.speak_dialog("Updating")
         t = multiprocessing.Process(target=self._get_new_info(reply=True))
         t.start()
-
-    # def handle_no_intent(self):
-    #     self.speak("Say how about caffeine content of another drink or say goodbye.", True) if \
-    #         not self.check_for_signal("CORE_skipWakeWord", -1) else self.speak("Stay caffeinated!")
-    #     self.enable_intent('CaffeineContentGoodbyeIntent')
-    #     self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
-    #     self.disable_intent('CaffeineYesIDoIntent')
-    #     self.disable_intent('Caffeine_no_intent')
-    #
-    # def handle_yes_i_do_intent(self, message):
-    #     LOG.info(self.results)
-    #     self._get_drink_text(message)
-    #     # self.speak(self._get_drink_text())
-    #     # self.speak("Provided by CaffeineWiz.")
-    #     self.speak("Provided by CaffeineWiz. Say how about caffeine content of another drink or say goodbye.", True) \
-    #         if not self.check_for_signal("CORE_skipWakeWord", -1) else \
-    #         self.speak("Provided by CaffeineWiz. Stay caffeinated!")
-    #     self.enable_intent('CaffeineContentGoodbyeIntent')
-    #     self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
-    #     self.disable_intent('CaffeineYesIDoIntent')
-    #     self.disable_intent('Caffeine_no_intent')
 
     def CQS_match_query_phrase(self, utt, message=None):
         if " of " in utt:
@@ -466,8 +447,6 @@ class CaffeineWizSkill(CommonQuerySkill):
             #             ", which has " + str(match2[0][2]) + " milligrams caffeine in "
             #             + str(match2[0][1])) + " ounces. Provided by CaffeineWiz")
         preference_unit = self.preference_unit(message)
-        # self.digits = preference_unit['measure'] \
-        #     if preference_unit['measure'] else 'imperial'
         if preference_unit['measure'] == 'metric':
             caff_mg, caff_vol, drink_units = self.convert_metric(caff_oz, caff_mg)
         else:
