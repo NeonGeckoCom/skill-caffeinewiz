@@ -30,10 +30,10 @@ import ast
 import datetime
 import difflib
 import multiprocessing
-import pathlib
 import pickle
 import urllib.request
-from os.path import join, abspath, dirname
+
+from typing import Optional
 from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
 from time import sleep
@@ -50,9 +50,6 @@ TIME_TO_CHECK = 3600
 class CaffeineWizSkill(CommonQuerySkill):
     def __init__(self):
         super(CaffeineWizSkill, self).__init__(name="CaffeineWizSkill")
-        # if skill_needs_patching(self):
-        #     LOG.warning("Patching Neon skill for non-neon core")
-        #     stub_missing_parameters(self)
 
         self.results = None  # TODO: Should be dict for multi-user support DM
         self.translate_drinks = {
@@ -102,9 +99,11 @@ class CaffeineWizSkill(CommonQuerySkill):
         LOG.info(tdelta)
         # if more than one hour, calculate and fetch new data again:
         if (tdelta.total_seconds() > TIME_TO_CHECK
-            or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_informer.txt')).exists()
-            or not pathlib.Path(join(abspath(dirname(__file__)), 'drinkList_from_caffeine_wiz.txt')).exists()) and \
-                check_online(("https://www.caffeineinformer.com/the-caffeine-database", "http://caffeinewiz.com/")):
+            or not self.file_system.exists('drinkList_from_caffeine_informer.txt')
+            or not self.file_system.exists('drinkList_from_caffeine_wiz.txt'))\
+                and check_online(
+            ("https://www.caffeineinformer.com/the-caffeine-database",
+             "http://caffeinewiz.com/")):
             # starting a separate process because websites might take a while to respond
             t = multiprocessing.Process(target=self._get_new_info())
             t.start()
@@ -128,6 +127,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         t.start()
 
     def CQS_match_query_phrase(self, utt, message=None):
+        # TODO: Language agnostic parsing here
         if " of " in utt:
             drink = utt.split(" of ", 1)[1]
         elif " in " in utt:
@@ -140,20 +140,26 @@ class CaffeineWizSkill(CommonQuerySkill):
         if self._drink_in_database(drink):
             try:
                 to_speak = self._generate_drink_dialog(drink, message)
+                if not to_speak:
+                    # No dialog generated
+                    return None
                 if self.voc_match(utt, "caffeine"):
                     conf = CQSMatchLevel.EXACT
                 elif f" {drink.lower()} " in to_speak.lower():
-                    # If the exact drink name was matched, but caffeine not requested, consider this a general match
+                    # If the exact drink name was matched
+                    # but caffeine not requested, consider this a general match
                     conf = CQSMatchLevel.GENERAL
                 else:
-                    # We didn't match "caffeine" or an exact drink name, this request isn't for this skill
+                    # We didn't match "caffeine" or an exact drink name
+                    # this request isn't for this skill
                     return None
             except Exception as e:
                 LOG.error(e)
                 LOG.error(drink)
                 return None
         else:
-            to_speak = self.dialog_renderer.render("NotFound", {"drink": drink})
+            to_speak = self.dialog_renderer.render("NotFound",
+                                                   {"drink": drink})
             if self.voc_match(utt, "caffeine"):
                 conf = CQSMatchLevel.CATEGORY
             else:
@@ -167,7 +173,8 @@ class CaffeineWizSkill(CommonQuerySkill):
                 if not self.check_for_signal("CORE_skipWakeWord", -1):
                     self.speak_dialog("HowAboutMore", expect_response=True)
                     self.enable_intent('CaffeineContentGoodbyeIntent')
-                    self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
+                    self.request_check_timeout(self.default_intent_timeout,
+                                               'CaffeineContentGoodbyeIntent')
                 else:
                     self.speak_dialog("StayCaffeinated")
             else:
@@ -175,7 +182,6 @@ class CaffeineWizSkill(CommonQuerySkill):
                 self.await_confirmation(data.get("user", "local"), "more")
 
     def handle_caffeine_intent(self, message):
-        # flac_filename = message.data.get("flac_filename")
         drink = self._clean_drink_name(message.data.get("drink", None))
         if not drink:
             self.speak_dialog("NoDrinkHeard")
@@ -184,22 +190,30 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.speak_dialog('one_moment', private=True)
 
         if self._drink_in_database(drink):
-            self.speak(self._generate_drink_dialog(drink, message))
+            dialog = self._generate_drink_dialog(drink, message)
+            if dialog:
+                self.speak(dialog)
+            else:
+                self.speak_dialog("NotFound", {'drink': drink})
+
             if self.neon_core:
                 if len(self.results) == 1:
                     if not self.check_for_signal("CORE_skipWakeWord", -1):
                         self.speak_dialog("HowAboutMore", expect_response=True)
                         self.enable_intent('CaffeineContentGoodbyeIntent')
-                        self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
+                        self.request_check_timeout(self.default_intent_timeout,
+                                                   'CaffeineContentGoodbyeIntent')
                     else:
                         self.speak_dialog("StayCaffeinated")
                 else:
                     self.speak_dialog("MoreDrinks", expect_response=True)
-                    self.await_confirmation(self.get_utterance_user(message), "more")
+                    self.await_confirmation(self.get_utterance_user(message),
+                                            "more")
         else:
             self.speak_dialog("NotFound", {'drink': drink})
 
-    def convert_metric(self, caff_oz: float, caff_mg: int):
+    @staticmethod
+    def convert_metric(caff_oz: float, caff_mg: float) -> (str, str, str):
         """
         Convert from imperial to metric units
         :param caff_oz: (float) oz from lookup
@@ -207,16 +221,19 @@ class CaffeineWizSkill(CommonQuerySkill):
         :return: mg, vol, units
         """
 
-        if caff_oz <= 8.45351:
-            caff_mg = str(self._drink_convert_to_metric(250, caff_mg, caff_oz))
+        def _drink_convert_to_metric(normalized_ml, caffeine_oz, oz):
+            return int((caffeine_oz / (oz * 29.5735)) * normalized_ml)
+
+        if caff_oz < 16:
+            caff_mg = str(_drink_convert_to_metric(250, caff_mg, caff_oz))
             caff_vol = '250'
             drink_units = 'milliliters'
-        elif caff_oz <= 16.907:
-            caff_mg = str(self._drink_convert_to_metric(500, caff_mg, caff_oz))
+        elif caff_oz < 32:
+            caff_mg = str(_drink_convert_to_metric(500, caff_mg, caff_oz))
             caff_vol = '500'
             drink_units = 'milliliters'
         else:
-            caff_mg = str(self._drink_convert_to_metric(1000, caff_mg, caff_oz))
+            caff_mg = str(_drink_convert_to_metric(1000, caff_mg, caff_oz))
             caff_vol = '1'
             drink_units = 'liter'
         # caff_vol = caff_oz
@@ -241,10 +258,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         # self.disable_intent('Caffeine_no_intent')
         # LOG.debug('3- Goodbye')
         self.speak_dialog("StayCaffeinated")
-
-    @staticmethod
-    def _drink_convert_to_metric(total, caffeine_oz, oz):  # TODO: Annotate and simplify this method DM
-        return int((caffeine_oz / (oz * 29.5735)) * total)
 
     def converse(self, message=None):
         user = self.get_utterance_user(message)
@@ -277,6 +290,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         pass
 
     def _get_drink_text(self, message, caff_list=None):
+        # TODO: Just call 'generate_drink_dialog'?
         cnt = 0
         spoken = []
         if not caff_list:
@@ -291,17 +305,19 @@ class CaffeineWizSkill(CommonQuerySkill):
                 units = self.preference_unit(message)['measure']
 
                 if units == "metric":
-                    caff_mg, caff_vol, drink_units = self.convert_metric(oz, caffeine)
+                    caff_mg, caff_vol, drink_units = \
+                        self.convert_metric(oz, caffeine)
                 else:
                     caff_mg = str(caffeine)
                     caff_vol = str(oz)
                     drink_units = 'ounces'
 
-                self.speak_dialog('MultipleCaffeine', {'drink': drink,
-                                                       'caffeine_content': caff_mg,
-                                                       'caffeine_units': self.translate('milligrams'),
-                                                       'drink_size': caff_vol,
-                                                       'drink_units': drink_units})
+                self.speak_dialog('MultipleCaffeine',
+                                  {'drink': drink,
+                                   'caffeine_content': caff_mg,
+                                   'caffeine_units': self.translate('milligrams'),
+                                   'drink_size': caff_vol,
+                                   'drink_units': drink_units})  # TODO: Translate
                 spoken.append(caff_list[i][0])
                 sleep(0.5)  # Prevent simultaneous speak inserts
             cnt = cnt + 1
@@ -402,7 +418,8 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         try:
             # Strip leading "a"
-            drink = drink.split(maxsplit=1)[1] if drink.split(maxsplit=1)[0] == "a" else drink
+            drink = drink.split(maxsplit=1)[1] if \
+                drink.split(maxsplit=1)[0] == "a" else drink
         except IndexError:
             LOG.error(f"Invalid drink passed: {drink}")
             return ""
@@ -420,7 +437,7 @@ class CaffeineWizSkill(CommonQuerySkill):
     def _get_matching_drinks(self, drink: str) -> list:
         return [i for i in self.from_caffeine_wiz if i[0] in drink or drink in i[0]]
 
-    def _generate_drink_dialog(self, drink: str, message) -> str:
+    def _generate_drink_dialog(self, drink: str, message) -> Optional[str]:
         """
         Generates the dialog and populates self.results for the requested drink
         :param drink: raw input drink to find
@@ -429,45 +446,45 @@ class CaffeineWizSkill(CommonQuerySkill):
         """
         self.results = self._get_matching_drinks(drink)
         LOG.debug(self.results)
+        if len(self.results) == 0:
+            return None
         if len(self.results) == 1:
-            '''Return the only result'''
-            # self.speak(("The best match is: " + str(self.results[0][0]) +
-            #             ", which has " + str(self.results[0][2]) + " milligrams caffeine in "
-            #             + str(self.results[0][1])) + " ounces. Provided by CaffeineWiz")
+            # Return the only result
             drink = str(self.results[0][0])
             caff_mg = float(self.results[0][2])
             caff_oz = float(self.results[0][1])
 
         else:
-            '''Find the best match from all of the returned results'''
-            matched_drink_names = [self.results[i][0] for i in range(len(self.results))]
+            # Find the best match from all of the returned results
+            matched_drink_names = [self.results[i][0]
+                                   for i in range(len(self.results))]
             match = difflib.get_close_matches(drink, matched_drink_names, 1)
             if match:
                 match2 = [i for i in self.results if i[0] in match]
             else:
-                match2 = [i for i in self.results if i[0] in matched_drink_names[0]]
+                match2 = [i for i in self.results
+                          if i[0] in matched_drink_names[0]]
             LOG.debug(match)
             LOG.debug(match2)
             drink = str(match2[0][0])
             caff_mg = float(match2[0][2])
             caff_oz = float(match2[0][1])
-            # self.speak(("The best match is: " + str(match2[0][0]) +
-            #             ", which has " + str(match2[0][2]) + " milligrams caffeine in "
-            #             + str(match2[0][1])) + " ounces. Provided by CaffeineWiz")
         preference_unit = self.preference_unit(message)
         if preference_unit['measure'] == 'metric':
-            caff_mg, caff_vol, drink_units = self.convert_metric(caff_oz, caff_mg)
+            caff_mg, caff_vol, drink_units = self.convert_metric(caff_oz,
+                                                                 caff_mg)
         else:
             caff_mg = str(caff_mg)
             caff_vol = str(caff_oz)
             drink_units = 'ounces'
 
         LOG.info(f"{drink} | {caff_mg} | {caff_vol} | {drink_units}")
-        to_speak = self.dialog_renderer.render('DrinkCaffeine', {'drink': drink,
-                                                                 'caffeine_content': caff_mg,
-                                                                 'caffeine_units': self.translate('milligrams'),
-                                                                 'drink_size': caff_vol,
-                                                                 'drink_units': drink_units})
+        to_speak = self.dialog_renderer.render('DrinkCaffeine', {
+            'drink': drink,
+            'caffeine_content': caff_mg,
+            'caffeine_units': self.translate('milligrams'),
+            'drink_size': caff_vol,
+            'drink_units': drink_units})  # TODO: Translate
         return to_speak
 
 

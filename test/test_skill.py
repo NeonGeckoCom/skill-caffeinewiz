@@ -58,7 +58,6 @@ class TestSkill(unittest.TestCase):
     def test_00_skill_init(self):
         # Test any parameters expected to be set in init or initialize methods
         from neon_utils.skills.common_query_skill import CommonQuerySkill
-        from datetime import datetime
 
         self.assertIsInstance(self.skill, CommonQuerySkill)
         self.assertIsInstance(self.skill.translate_drinks, dict)
@@ -135,8 +134,13 @@ class TestSkill(unittest.TestCase):
         pass
 
     def test_convert_metric(self):
-        # TODO: Test this conversion DM
-        pass
+        # ~30mg/250mL
+        converted = self.skill.convert_metric(12, 34)
+        self.assertEqual(converted, ('23', '250', 'milliliters'))
+        converted = self.skill.convert_metric(24, 68)
+        self.assertEqual(converted, ('47', '500', 'milliliters'))
+        converted = self.skill.convert_metric(36, 102)
+        self.assertEqual(converted, ('95', '1', 'liter'))
 
     def test_handle_goodbye_intent(self):
         message = Message("recognizer_loop:utterance", {"GoodbyeKeyword": "good bye"})
@@ -205,6 +209,7 @@ class TestSkill(unittest.TestCase):
         self.assertIsInstance(self.skill._get_matching_drinks("software"), list)
 
     def test_generate_drink_dialog(self):
+        # TODO: Write this test DM
         pass
 
 
