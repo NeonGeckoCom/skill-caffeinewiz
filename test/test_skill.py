@@ -148,8 +148,16 @@ class TestSkill(unittest.TestCase):
         pass
 
     def test_add_more_caffeine_data(self):
-        # TODO: Write this test DM
-        pass
+        real_data = self.skill.from_caffeine_wiz
+        self.skill.from_caffeine_wiz = list()
+        self.skill._add_more_caffeine_data()
+        self.assertGreaterEqual(len(self.skill.from_caffeine_wiz), 1)
+        invalid_entry = ["beverage", "quantity (oz)", "caffeine content (mg)"]
+        self.skill.from_caffeine_wiz.append(invalid_entry)
+        self.skill._add_more_caffeine_data()
+        self.assertNotIn(invalid_entry, self.skill.from_caffeine_wiz)
+
+        self.skill.from_caffeine_wiz = real_data
 
     def test_get_new_info(self):
         # TODO: Write this test DM

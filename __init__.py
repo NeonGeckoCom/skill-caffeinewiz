@@ -314,9 +314,10 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_wiz.extend(x[:-2] for x in
                                       self.from_caffeine_informer
                                       if str(x[:-2]) not in str(self.from_caffeine_wiz))
+        invalid_entry = ["beverage", "quantity (oz)", "caffeine content (mg)"]
+        if invalid_entry in self.from_caffeine_wiz:
+            self.from_caffeine_wiz.remove(invalid_entry)
         sorted(self.from_caffeine_wiz)
-        self.from_caffeine_wiz.remove(["beverage", "quantity (oz)", "caffeine content (mg)"])
-        # LOG.info(self.from_caffeine_wiz)
 
     def _get_new_info(self, reply=False):
         """fetches and combines new data from the two caffeine sources"""
