@@ -9,7 +9,7 @@ jobs:
   neon_core:
     strategy:
       matrix:
-        python-version: [ 3.8, 3.9 ]
+        python-version: [ 3.7, 3.8, 3.9 ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -20,14 +20,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Dependencies
         run: |
-          sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git
+          sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git libpulse-dev
           pip install --upgrade pip
           pip install pytest mock git+https://github.com/NeonGeckoCom/NeonCore#egg=neon_core
           pip install -r requirements.txt
       - name: Test Skill
         run: |
           pytest test/test_skill.py
-  holmes_v:
+  ovos-core:
     strategy:
       matrix:
         python-version: [ 3.8 ]
@@ -41,9 +41,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Dependencies
         run: |
-          sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git
+          sudo apt update
+          sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git libpulse-dev
           pip install --upgrade pip
-          pip install pytest mock holmesV[skills] lingua-franca
+          pip install ovos-core[skills] pytest mock
           pip install -r requirements.txt
       - name: Test Skill
         run: |
