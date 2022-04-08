@@ -338,7 +338,8 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.from_caffeine_informer = list(ast.literal_eval(new))
             # LOG.warning(self.from_caffeine_informer)
         except Exception as e:
-            LOG.error(f"Error updating from sources: {e}")
+            LOG.error(f"Error updating from caffeineinformer: {e}")
+            self.from_caffeine_informer = self.from_caffeine_informer or list()
 
         # Update from caffeinewiz
         try:
@@ -353,27 +354,20 @@ class CaffeineWizSkill(CommonQuerySkill):
                                        for i in areatable.findAll('td') if i.text != "\xa0"], 3)))
             # LOG.warning(self.from_caffeine_wiz)
         except Exception as e:
-            LOG.error(e)
+            LOG.error(f"Error updating from caffeinewiz: {e}")
+            self.from_caffeine_wiz = self.from_caffeine_wiz or list()
 
         # Add Normalized drink names
+        def _normalize_drink_list(drink_list):
+            for drink in drink_list:
+                parsed_name = normalize(drink[0].replace('-', ' '))
+                if drink[0] != parsed_name:
+                    new_drink = [parsed_name] + drink[1:]
+                    LOG.debug(f"Normalizing {drink[0]} to {new_drink[0]}")
+                    drink_list.append(new_drink)
         try:
-            for drink in self.from_caffeine_informer:
-                parsed_name = normalize(drink[0].replace('-', ' '))
-                if drink[0] != parsed_name:
-                    # LOG.debug(parsed_name)
-                    new_drink = [parsed_name] + drink[1:]
-                    # LOG.debug(new_drink)
-                    self.from_caffeine_informer.append(new_drink)
-                    # LOG.warning(self.from_caffeine_informer[len(self.from_caffeine_informer) - 1])
-
-            for drink in self.from_caffeine_wiz:
-                parsed_name = normalize(drink[0].replace('-', ' '))
-                if drink[0] != parsed_name:
-                    # LOG.debug(parsed_name)
-                    new_drink = [parsed_name] + drink[1:]
-                    # LOG.debug(new_drink)
-                    self.from_caffeine_wiz.append(new_drink)
-                    # LOG.warning(self.from_caffeine_wiz[len(self.from_caffeine_wiz) - 1])
+            _normalize_drink_list(self.from_caffeine_informer)
+            _normalize_drink_list(self.from_caffeine_wiz)
         except Exception as e:
             LOG.error(e)
 

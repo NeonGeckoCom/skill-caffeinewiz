@@ -16,7 +16,7 @@
 # Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
 # US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
 # China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
-
+import os.path
 import unittest
 
 from copy import deepcopy
@@ -160,8 +160,24 @@ class TestSkill(unittest.TestCase):
         self.skill.from_caffeine_wiz = real_data
 
     def test_get_new_info(self):
-        # TODO: Write this test DM
-        pass
+        real_method = self.skill._add_more_caffeine_data
+        self.skill._add_more_caffeine_data = Mock()
+        self.skill.from_caffeine_wiz = None
+        self.skill.from_caffeine_informer = None
+        self.skill._get_new_info()
+        self.assertIsInstance(self.skill.from_caffeine_wiz, list)
+        self.assertIsInstance(self.skill.from_caffeine_informer, list)
+        self.skill.speak_dialog.assert_not_called()
+        self.skill._add_more_caffeine_data.assert_called_once()
+
+        self.assertTrue(self.skill.file_system.exists(
+            "drinkList_from_caffeine_wiz.txt"))
+        self.assertTrue(self.skill.file_system.exists(
+            "drinkList_from_caffeine_informer.txt"))
+
+        self.skill._get_new_info(True)
+        self.skill.speak_dialog.assert_called_once_with("UpdateComplete")
+        self.skill._add_more_caffeine_data = real_method
 
     def test_clean_drink_name(self):
         self.assertEqual("coffee", self.skill._clean_drink_name("a coffee"))
