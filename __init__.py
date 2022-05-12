@@ -29,15 +29,17 @@
 import ast
 import datetime
 import difflib
-import multiprocessing
+import os.path
 import pickle
 import urllib.request
-from threading import Event
+from threading import Event, Thread
 
 from typing import Optional
 from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
 from time import sleep
+
+from lingua_franca import load_language
 from neon_utils.skills.common_query_skill import CQSMatchLevel, CommonQuerySkill
 from neon_utils.logger import LOG
 from neon_utils import web_utils
@@ -80,6 +82,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_informer = list()
         self._update_event = Event()
 
+        load_language('en')  # Load for drink name normalization
+
     @property
     def last_updated(self) -> Optional[datetime.datetime]:
         if self.settings.get("lastUpdate"):
@@ -104,7 +108,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                 "https://www.caffeineinformer.com/the-caffeine-database",
                 "http://caffeinewiz.com/")):
             # starting a separate process because websites might take a while to respond
-            t = multiprocessing.Process(target=self._get_new_info())
+            t = Thread(target=self._get_new_info, daemon=False)
             t.start()
         else:
             LOG.info("Using cached caffeine data")
@@ -116,15 +120,18 @@ class CaffeineWizSkill(CommonQuerySkill):
             with self.file_system.open('drinkList_from_caffeine_informer.txt',
                                        'rb') as from_caffeine_informer_file:
                 self.from_caffeine_informer = pickle.load(from_caffeine_informer_file)
-                # combine them as in get_new_info and add rocket chocolate:
-                self._add_more_caffeine_data()
+            # combine them as in get_new_info and add rocket chocolate:
+            self._add_more_caffeine_data()
 
     @intent_handler(IntentBuilder("CaffeineUpdate").require("UpdateCaffeine"))
     def handle_caffeine_update(self, message):
         LOG.debug(message)
         self.speak_dialog("Updating")
-        t = multiprocessing.Process(target=self._get_new_info(reply=True))
+        t = Thread(target=self._get_new_info, kwargs={"reply": True},
+                   daemon=True)
         t.start()
+        if not self._update_event.wait(30):
+            LOG.error("Timeout waiting for update")
 
     @intent_handler(IntentBuilder("CaffeineContentIntent")
                     .require("CaffeineKeyword").require("drink"))
@@ -340,7 +347,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_wiz.append(['rocket chocolate', '.4', '150'])
         self.from_caffeine_wiz.extend(x[:-2] for x in
                                       self.from_caffeine_informer
-                                      if str(x[:-2]) not in str(self.from_caffeine_wiz))
+                                      if str(x[:-2]) not in
+                                      str(self.from_caffeine_wiz))
         invalid_entry = ["beverage", "quantity (oz)", "caffeine content (mg)"]
         if invalid_entry in self.from_caffeine_wiz:
             self.from_caffeine_wiz.remove(invalid_entry)
@@ -349,8 +357,10 @@ class CaffeineWizSkill(CommonQuerySkill):
     def _get_new_info(self, reply=False):
         """fetches and combines new data from the two caffeine sources"""
         self._update_event.clear()
+        success = False
         time_check = datetime.datetime.now()
 
+        # TODO: caffeineinformer update failing DM
         # Update from caffeineinformer
         try:
             # prep the html pages:
@@ -379,7 +389,8 @@ class CaffeineWizSkill(CommonQuerySkill):
             if areatable:
                 self.from_caffeine_wiz = list(
                     (web_utils.chunks([i.text.lower().replace("\n", "")
-                                       for i in areatable.findAll('td') if i.text != "\xa0"], 3)))
+                                       for i in areatable.findAll('td')
+                                       if i.text != "\xa0"], 3)))
             # LOG.warning(self.from_caffeine_wiz)
         except Exception as e:
             LOG.error(f"Error updating from caffeinewiz: {e}")
@@ -388,11 +399,14 @@ class CaffeineWizSkill(CommonQuerySkill):
         # Add Normalized drink names
         def _normalize_drink_list(drink_list):
             for drink in drink_list:
-                parsed_name = normalize(drink[0].replace('-', ' '))
-                if drink[0] != parsed_name:
-                    new_drink = [parsed_name] + drink[1:]
-                    LOG.debug(f"Normalizing {drink[0]} to {new_drink[0]}")
-                    drink_list.append(new_drink)
+                try:
+                    parsed_name = normalize(drink[0].replace('-', ' '), 'en')
+                    if drink[0] != parsed_name:
+                        new_drink = [parsed_name] + drink[1:]
+                        LOG.debug(f"Normalizing {drink[0]} to {new_drink[0]}")
+                        drink_list.append(new_drink)
+                except Exception as x:
+                    LOG.error(x)
         try:
             _normalize_drink_list(self.from_caffeine_informer)
             _normalize_drink_list(self.from_caffeine_wiz)
@@ -400,27 +414,43 @@ class CaffeineWizSkill(CommonQuerySkill):
             LOG.error(e)
 
         # saving and pickling the results:
+        if not self.from_caffeine_wiz:
+            LOG.info("Loading Caffeine data from bundled defaults")
+            with open(os.path.join(os.path.dirname(__file__), "data",
+                                   "caffeine_wiz_data.pickle"),
+                      'rb') as f:
+                self.from_caffeine_wiz = pickle.load(f)
         with self.file_system.open('drinkList_from_caffeine_wiz.txt',
                                    'wb+') as from_caffeine_wiz_file:
             pickle.dump(self.from_caffeine_wiz, from_caffeine_wiz_file)
 
-        with self.file_system.open('drinkList_from_caffeine_informer.txt',
-                                   'wb+') as from_caffeine_informer_file:
-            pickle.dump(self.from_caffeine_informer, from_caffeine_informer_file)
+        if self.from_caffeine_informer:
+            with self.file_system.open('drinkList_from_caffeine_informer.txt',
+                                       'wb+') as from_caffeine_informer_file:
+                pickle.dump(self.from_caffeine_informer,
+                            from_caffeine_informer_file)
         self._add_more_caffeine_data()
 
         try:
-            self.update_skill_settings({"lastUpdate": str(time_check)}, skill_global=True)
-            if reply:
-                self.speak_dialog("UpdateComplete")
+            # TODO: Check for CW and CI success
+            if self.from_caffeine_wiz:
+                self.update_skill_settings({"lastUpdate": str(time_check)},
+                                           skill_global=True)
+                if reply:
+                    self.speak_dialog("UpdateComplete")
+                success = True
+            elif reply:
+                LOG.error("CaffeineWiz source failed to update!")
+                self.speak_dialog("UpdateError")
         except Exception as e:
-            LOG.error("An error occurred during the CaffeineWiz update: " + str(e))
+            LOG.error(f"An error occurred during the CaffeineWiz update: {e}")
             # self.check_for_signal("WIZ_getting_new_content")
         self._update_event.set()
+        return success
 
     def _clean_drink_name(self, drink: str) -> str:
         """
-        Normalizes an input drink name and handles known common alternative names
+        Normalizes an input drink name and handles known alternative names
         :param drink: Parsed user requested drink
         :return: normalized drink or None if no name was parsed
         """
@@ -438,17 +468,20 @@ class CaffeineWizSkill(CommonQuerySkill):
             return ""
         if drink.startswith("cup of") or drink.startswith("glass of"):
             drink = drink.split(" of", 1)[1].strip()
-        drink = drink.translate({ord(i): None for i in '?:!/;@#$'}).rstrip().replace(" '", "'")
+        drink = drink.translate({ord(i): None for i in '?:!/;@#$'})\
+            .rstrip().replace(" '", "'")
         # Check for common mis-matched names
         drink = self.translate_drinks.get(drink, drink)
         LOG.info(drink)
         return drink
 
     def _drink_in_database(self, drink: str) -> bool:
-        return any(i for i in self.from_caffeine_wiz if i[0] in drink or drink in i[0])
+        return any(i for i in self.from_caffeine_wiz
+                   if i[0] in drink or drink in i[0])
 
     def _get_matching_drinks(self, drink: str) -> list:
-        return [i for i in self.from_caffeine_wiz if i[0] in drink or drink in i[0]]
+        return [i for i in self.from_caffeine_wiz
+                if i[0] in drink or drink in i[0]]
 
     def _generate_drink_dialog(self, drink: str, message) -> Optional[str]:
         """
