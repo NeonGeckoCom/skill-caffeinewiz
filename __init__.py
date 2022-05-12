@@ -32,6 +32,7 @@ import difflib
 import multiprocessing
 import pickle
 import urllib.request
+from threading import Event
 
 from typing import Optional
 from adapt.intent import IntentBuilder
@@ -43,6 +44,8 @@ from neon_utils import web_utils
 from neon_utils.net_utils import check_online
 
 from mycroft.util.parse import normalize
+from mycroft.skills import intent_handler
+
 
 TIME_TO_CHECK = 3600
 
@@ -73,37 +76,33 @@ class CaffeineWizSkill(CommonQuerySkill):
             "blue frog energy drink": "blu frog energy drink"
             }
 
-        self.last_updated = None  # TODO: This should be a direct settings reference
-        try:
-            if self.settings.get("lastUpdate"):
-                self.last_updated = datetime.datetime.strptime(self.settings["lastUpdate"], '%Y-%m-%d %H:%M:%S.%f')
-        except Exception as e:
-            LOG.info(e)
-        LOG.debug(self.last_updated)
         self.from_caffeine_wiz = list()
         self.from_caffeine_informer = list()
+        self._update_event = Event()
+
+    @property
+    def last_updated(self) -> Optional[datetime.datetime]:
+        if self.settings.get("lastUpdate"):
+            return datetime.datetime.strptime(self.settings["lastUpdate"],
+                                              '%Y-%m-%d %H:%M:%S.%f')
+        return None
 
     def initialize(self):
-        caffeine_intent = IntentBuilder("CaffeineContentIntent").require("CaffeineKeyword").require("drink").build()
-        self.register_intent(caffeine_intent, self.handle_caffeine_intent)
-
         goodbye_intent = IntentBuilder("CaffeineContentGoodbyeIntent").require("GoodbyeKeyword").build()
         self.register_intent(goodbye_intent, self.handle_goodbye_intent)
-
-        update_caffeine = IntentBuilder("Caffeine_update").require("UpdateCaffeine").build()
-        self.register_intent(update_caffeine, self.handle_caffeine_update)
-
         self.disable_intent('CaffeineContentGoodbyeIntent')
 
-        tdelta = datetime.datetime.now() - self.last_updated if self.last_updated else datetime.timedelta(hours=1.1)
+        tdelta = datetime.datetime.now() - (self.last_updated or
+                                            datetime.timedelta(hours=1.1))
         LOG.info(tdelta)
         # if more than one hour, calculate and fetch new data again:
-        if (tdelta.total_seconds() > TIME_TO_CHECK
-            or not self.file_system.exists('drinkList_from_caffeine_informer.txt')
-            or not self.file_system.exists('drinkList_from_caffeine_wiz.txt'))\
-                and check_online(
-            ("https://www.caffeineinformer.com/the-caffeine-database",
-             "http://caffeinewiz.com/")):
+        if any((
+            tdelta.total_seconds() > TIME_TO_CHECK,
+            not self.file_system.exists('drinkList_from_caffeine_informer.txt'),
+            not self.file_system.exists('drinkList_from_caffeine_wiz.txt')
+        )) and check_online((
+                "https://www.caffeineinformer.com/the-caffeine-database",
+                "http://caffeinewiz.com/")):
             # starting a separate process because websites might take a while to respond
             t = multiprocessing.Process(target=self._get_new_info())
             t.start()
@@ -120,11 +119,50 @@ class CaffeineWizSkill(CommonQuerySkill):
                 # combine them as in get_new_info and add rocket chocolate:
                 self._add_more_caffeine_data()
 
+    @intent_handler(IntentBuilder("CaffeineUpdate").require("UpdateCaffeine"))
     def handle_caffeine_update(self, message):
         LOG.debug(message)
         self.speak_dialog("Updating")
         t = multiprocessing.Process(target=self._get_new_info(reply=True))
         t.start()
+
+    @intent_handler(IntentBuilder("CaffeineContentIntent")
+                    .require("CaffeineKeyword").require("drink"))
+    def handle_caffeine_intent(self, message):
+
+        drink = self._clean_drink_name(message.data.get("drink", None))
+        if not drink:
+            self.speak_dialog("NoDrinkHeard")
+            return
+
+        if not self._update_event.isSet():
+            self.speak_dialog('one_moment', private=True)
+            self._update_event.wait(30)
+        elif self.check_for_signal('CORE_useHesitation', -1):
+            self.speak_dialog('one_moment', private=True)
+
+        if self._drink_in_database(drink):
+            dialog = self._generate_drink_dialog(drink, message)
+            if dialog:
+                self.speak(dialog)
+            else:
+                self.speak_dialog("NotFound", {'drink': drink})
+
+            if self.neon_core:
+                if len(self.results) == 1:
+                    if not self.check_for_signal("CORE_skipWakeWord", -1):
+                        self.speak_dialog("HowAboutMore", expect_response=True)
+                        self.enable_intent('CaffeineContentGoodbyeIntent')
+                        self.request_check_timeout(self.default_intent_timeout,
+                                                   'CaffeineContentGoodbyeIntent')
+                    else:
+                        self.speak_dialog("StayCaffeinated")
+                else:
+                    self.speak_dialog("MoreDrinks", expect_response=True)
+                    self.await_confirmation(self.get_utterance_user(message),
+                                            "more")
+        else:
+            self.speak_dialog("NotFound", {'drink': drink})
 
     def CQS_match_query_phrase(self, utt, message=None):
         # TODO: Language agnostic parsing here
@@ -137,6 +175,10 @@ class CaffeineWizSkill(CommonQuerySkill):
         drink = self._clean_drink_name(drink)
         if not drink:
             return None
+
+        if not self._update_event.isSet():
+            self._update_event.wait(30)
+
         if self._drink_in_database(drink):
             try:
                 to_speak = self._generate_drink_dialog(drink, message)
@@ -180,37 +222,6 @@ class CaffeineWizSkill(CommonQuerySkill):
             else:
                 self.speak_dialog("MoreDrinks", expect_response=True)
                 self.await_confirmation(data.get("user", "local"), "more")
-
-    def handle_caffeine_intent(self, message):
-        drink = self._clean_drink_name(message.data.get("drink", None))
-        if not drink:
-            self.speak_dialog("NoDrinkHeard")
-            return
-        elif self.check_for_signal('CORE_useHesitation', -1):
-            self.speak_dialog('one_moment', private=True)
-
-        if self._drink_in_database(drink):
-            dialog = self._generate_drink_dialog(drink, message)
-            if dialog:
-                self.speak(dialog)
-            else:
-                self.speak_dialog("NotFound", {'drink': drink})
-
-            if self.neon_core:
-                if len(self.results) == 1:
-                    if not self.check_for_signal("CORE_skipWakeWord", -1):
-                        self.speak_dialog("HowAboutMore", expect_response=True)
-                        self.enable_intent('CaffeineContentGoodbyeIntent')
-                        self.request_check_timeout(self.default_intent_timeout,
-                                                   'CaffeineContentGoodbyeIntent')
-                    else:
-                        self.speak_dialog("StayCaffeinated")
-                else:
-                    self.speak_dialog("MoreDrinks", expect_response=True)
-                    self.await_confirmation(self.get_utterance_user(message),
-                                            "more")
-        else:
-            self.speak_dialog("NotFound", {'drink': drink})
 
     @staticmethod
     def convert_metric(caff_oz: float, caff_mg: float) -> (str, str, str):
@@ -337,6 +348,7 @@ class CaffeineWizSkill(CommonQuerySkill):
 
     def _get_new_info(self, reply=False):
         """fetches and combines new data from the two caffeine sources"""
+        self._update_event.clear()
         time_check = datetime.datetime.now()
 
         # Update from caffeineinformer
@@ -404,6 +416,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         except Exception as e:
             LOG.error("An error occurred during the CaffeineWiz update: " + str(e))
             # self.check_for_signal("WIZ_getting_new_content")
+        self._update_event.set()
 
     def _clean_drink_name(self, drink: str) -> str:
         """
