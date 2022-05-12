@@ -92,8 +92,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.register_intent(goodbye_intent, self.handle_goodbye_intent)
         self.disable_intent('CaffeineContentGoodbyeIntent')
 
-        tdelta = datetime.datetime.now() - (self.last_updated or
-                                            datetime.timedelta(hours=1.1))
+        tdelta = (datetime.datetime.now() -
+                  self.last_updated) or datetime.timedelta(hours=1.1)
         LOG.info(tdelta)
         # if more than one hour, calculate and fetch new data again:
         if any((
