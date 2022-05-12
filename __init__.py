@@ -29,11 +29,10 @@
 import ast
 import datetime
 import difflib
-import multiprocessing
 import os.path
 import pickle
 import urllib.request
-from threading import Event
+from threading import Event, Thread
 
 from typing import Optional
 from adapt.intent import IntentBuilder
@@ -109,7 +108,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                 "https://www.caffeineinformer.com/the-caffeine-database",
                 "http://caffeinewiz.com/")):
             # starting a separate process because websites might take a while to respond
-            t = multiprocessing.Process(target=self._get_new_info)
+            t = Thread(target=self._get_new_info, daemon=False)
             t.start()
         else:
             LOG.info("Using cached caffeine data")
@@ -128,9 +127,11 @@ class CaffeineWizSkill(CommonQuerySkill):
     def handle_caffeine_update(self, message):
         LOG.debug(message)
         self.speak_dialog("Updating")
-        t = multiprocessing.Process(target=self._get_new_info,
-                                    kwargs={"reply": True})
+        t = Thread(target=self._get_new_info, kwargs={"reply": True},
+                   daemon=True)
         t.start()
+        if not self._update_event.wait(30):
+            LOG.error("Timeout waiting for update")
 
     @intent_handler(IntentBuilder("CaffeineContentIntent")
                     .require("CaffeineKeyword").require("drink"))
