@@ -30,7 +30,9 @@ import ast
 import datetime
 import difflib
 import multiprocessing
+import os.path
 import pickle
+import shutil
 import urllib.request
 from threading import Event
 
@@ -120,8 +122,8 @@ class CaffeineWizSkill(CommonQuerySkill):
             with self.file_system.open('drinkList_from_caffeine_informer.txt',
                                        'rb') as from_caffeine_informer_file:
                 self.from_caffeine_informer = pickle.load(from_caffeine_informer_file)
-                # combine them as in get_new_info and add rocket chocolate:
-                self._add_more_caffeine_data()
+            # combine them as in get_new_info and add rocket chocolate:
+            self._add_more_caffeine_data()
 
     @intent_handler(IntentBuilder("CaffeineUpdate").require("UpdateCaffeine"))
     def handle_caffeine_update(self, message):
@@ -409,13 +411,20 @@ class CaffeineWizSkill(CommonQuerySkill):
             LOG.error(e)
 
         # saving and pickling the results:
+        if not self.from_caffeine_wiz:
+            LOG.info("Loading Caffeine data from bundled defaults")
+            with open(os.path.join(os.path.dirname(__file__), "data",
+                                   "caffeine_wiz_data.pickle"),
+                      'rb') as f:
+                self.from_caffeine_wiz = pickle.load(f)
         with self.file_system.open('drinkList_from_caffeine_wiz.txt',
                                    'wb+') as from_caffeine_wiz_file:
             pickle.dump(self.from_caffeine_wiz, from_caffeine_wiz_file)
 
-        with self.file_system.open('drinkList_from_caffeine_informer.txt',
-                                   'wb+') as from_caffeine_informer_file:
-            pickle.dump(self.from_caffeine_informer, from_caffeine_informer_file)
+        if self.from_caffeine_informer:
+            with self.file_system.open('drinkList_from_caffeine_informer.txt',
+                                       'wb+') as from_caffeine_informer_file:
+                pickle.dump(self.from_caffeine_informer, from_caffeine_informer_file)
         self._add_more_caffeine_data()
 
         try:
