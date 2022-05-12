@@ -32,7 +32,6 @@ import difflib
 import multiprocessing
 import os.path
 import pickle
-import shutil
 import urllib.request
 from threading import Event
 
@@ -110,7 +109,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                 "https://www.caffeineinformer.com/the-caffeine-database",
                 "http://caffeinewiz.com/")):
             # starting a separate process because websites might take a while to respond
-            t = multiprocessing.Process(target=self._get_new_info())
+            t = multiprocessing.Process(target=self._get_new_info)
             t.start()
         else:
             LOG.info("Using cached caffeine data")
@@ -129,7 +128,8 @@ class CaffeineWizSkill(CommonQuerySkill):
     def handle_caffeine_update(self, message):
         LOG.debug(message)
         self.speak_dialog("Updating")
-        t = multiprocessing.Process(target=self._get_new_info(reply=True))
+        t = multiprocessing.Process(target=self._get_new_info,
+                                    kwargs={"reply": True})
         t.start()
 
     @intent_handler(IntentBuilder("CaffeineContentIntent")
@@ -346,7 +346,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_wiz.append(['rocket chocolate', '.4', '150'])
         self.from_caffeine_wiz.extend(x[:-2] for x in
                                       self.from_caffeine_informer
-                                      if str(x[:-2]) not in str(self.from_caffeine_wiz))
+                                      if str(x[:-2]) not in
+                                      str(self.from_caffeine_wiz))
         invalid_entry = ["beverage", "quantity (oz)", "caffeine content (mg)"]
         if invalid_entry in self.from_caffeine_wiz:
             self.from_caffeine_wiz.remove(invalid_entry)
@@ -387,7 +388,8 @@ class CaffeineWizSkill(CommonQuerySkill):
             if areatable:
                 self.from_caffeine_wiz = list(
                     (web_utils.chunks([i.text.lower().replace("\n", "")
-                                       for i in areatable.findAll('td') if i.text != "\xa0"], 3)))
+                                       for i in areatable.findAll('td')
+                                       if i.text != "\xa0"], 3)))
             # LOG.warning(self.from_caffeine_wiz)
         except Exception as e:
             LOG.error(f"Error updating from caffeinewiz: {e}")
@@ -424,12 +426,15 @@ class CaffeineWizSkill(CommonQuerySkill):
         if self.from_caffeine_informer:
             with self.file_system.open('drinkList_from_caffeine_informer.txt',
                                        'wb+') as from_caffeine_informer_file:
-                pickle.dump(self.from_caffeine_informer, from_caffeine_informer_file)
+                pickle.dump(self.from_caffeine_informer,
+                            from_caffeine_informer_file)
         self._add_more_caffeine_data()
 
         try:
+            # TODO: Check for CW and CI success
             if self.from_caffeine_wiz:
-                self.update_skill_settings({"lastUpdate": str(time_check)}, skill_global=True)
+                self.update_skill_settings({"lastUpdate": str(time_check)},
+                                           skill_global=True)
                 if reply:
                     self.speak_dialog("UpdateComplete")
                 success = True
@@ -437,14 +442,14 @@ class CaffeineWizSkill(CommonQuerySkill):
                 LOG.error("CaffeineWiz source failed to update!")
                 self.speak_dialog("UpdateError")
         except Exception as e:
-            LOG.error("An error occurred during the CaffeineWiz update: " + str(e))
+            LOG.error(f"An error occurred during the CaffeineWiz update: {e}")
             # self.check_for_signal("WIZ_getting_new_content")
         self._update_event.set()
         return success
 
     def _clean_drink_name(self, drink: str) -> str:
         """
-        Normalizes an input drink name and handles known common alternative names
+        Normalizes an input drink name and handles known alternative names
         :param drink: Parsed user requested drink
         :return: normalized drink or None if no name was parsed
         """
@@ -462,17 +467,20 @@ class CaffeineWizSkill(CommonQuerySkill):
             return ""
         if drink.startswith("cup of") or drink.startswith("glass of"):
             drink = drink.split(" of", 1)[1].strip()
-        drink = drink.translate({ord(i): None for i in '?:!/;@#$'}).rstrip().replace(" '", "'")
+        drink = drink.translate({ord(i): None for i in '?:!/;@#$'})\
+            .rstrip().replace(" '", "'")
         # Check for common mis-matched names
         drink = self.translate_drinks.get(drink, drink)
         LOG.info(drink)
         return drink
 
     def _drink_in_database(self, drink: str) -> bool:
-        return any(i for i in self.from_caffeine_wiz if i[0] in drink or drink in i[0])
+        return any(i for i in self.from_caffeine_wiz
+                   if i[0] in drink or drink in i[0])
 
     def _get_matching_drinks(self, drink: str) -> list:
-        return [i for i in self.from_caffeine_wiz if i[0] in drink or drink in i[0]]
+        return [i for i in self.from_caffeine_wiz
+                if i[0] in drink or drink in i[0]]
 
     def _generate_drink_dialog(self, drink: str, message) -> Optional[str]:
         """
