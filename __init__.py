@@ -38,6 +38,8 @@ from typing import Optional
 from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
 from time import sleep
+
+from lingua_franca import load_language
 from neon_utils.skills.common_query_skill import CQSMatchLevel, CommonQuerySkill
 from neon_utils.logger import LOG
 from neon_utils import web_utils
@@ -79,6 +81,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_wiz = list()
         self.from_caffeine_informer = list()
         self._update_event = Event()
+
+        load_language('en')  # Load for drink name normalization
 
     @property
     def last_updated(self) -> Optional[datetime.datetime]:
@@ -349,8 +353,10 @@ class CaffeineWizSkill(CommonQuerySkill):
     def _get_new_info(self, reply=False):
         """fetches and combines new data from the two caffeine sources"""
         self._update_event.clear()
+        success = False
         time_check = datetime.datetime.now()
 
+        # TODO: caffeineinformer update failing DM
         # Update from caffeineinformer
         try:
             # prep the html pages:
@@ -388,11 +394,14 @@ class CaffeineWizSkill(CommonQuerySkill):
         # Add Normalized drink names
         def _normalize_drink_list(drink_list):
             for drink in drink_list:
-                parsed_name = normalize(drink[0].replace('-', ' '))
-                if drink[0] != parsed_name:
-                    new_drink = [parsed_name] + drink[1:]
-                    LOG.debug(f"Normalizing {drink[0]} to {new_drink[0]}")
-                    drink_list.append(new_drink)
+                try:
+                    parsed_name = normalize(drink[0].replace('-', ' '), 'en')
+                    if drink[0] != parsed_name:
+                        new_drink = [parsed_name] + drink[1:]
+                        LOG.debug(f"Normalizing {drink[0]} to {new_drink[0]}")
+                        drink_list.append(new_drink)
+                except Exception as x:
+                    LOG.error(x)
         try:
             _normalize_drink_list(self.from_caffeine_informer)
             _normalize_drink_list(self.from_caffeine_wiz)
@@ -410,13 +419,19 @@ class CaffeineWizSkill(CommonQuerySkill):
         self._add_more_caffeine_data()
 
         try:
-            self.update_skill_settings({"lastUpdate": str(time_check)}, skill_global=True)
-            if reply:
-                self.speak_dialog("UpdateComplete")
+            if self.from_caffeine_wiz:
+                self.update_skill_settings({"lastUpdate": str(time_check)}, skill_global=True)
+                if reply:
+                    self.speak_dialog("UpdateComplete")
+                success = True
+            elif reply:
+                LOG.error("CaffeineWiz source failed to update!")
+                self.speak_dialog("UpdateError")
         except Exception as e:
             LOG.error("An error occurred during the CaffeineWiz update: " + str(e))
             # self.check_for_signal("WIZ_getting_new_content")
         self._update_event.set()
+        return success
 
     def _clean_drink_name(self, drink: str) -> str:
         """
