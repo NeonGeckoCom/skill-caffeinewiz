@@ -154,7 +154,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             if dialog:
                 self.speak(dialog)
             else:
-                self.speak_dialog("NotFound", {'drink': drink})
+                self.speak_dialog("not_found", {'drink': drink})
 
             if self.neon_core:
                 if len(self.results) == 1:
@@ -171,7 +171,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                     self.await_confirmation(self.get_utterance_user(message),
                                             "more")
         else:
-            self.speak_dialog("NotFound", {'drink': drink})
+            self.speak_dialog("not_found", {'drink': drink})
 
     def CQS_match_query_phrase(self, utt, message=None):
         # TODO: Language agnostic parsing here
@@ -227,7 +227,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                     self.request_check_timeout(self.default_intent_timeout,
                                                'CaffeineContentGoodbyeIntent')
                 else:
-                    self.speak_dialog("StayCaffeinated")
+                    self.speak_dialog("stay_caffeinated")
             else:
                 self.speak_dialog("MoreDrinks", expect_response=True)
                 self.await_confirmation(data.get("user", "local"), "more")
@@ -277,7 +277,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         # self.disable_intent('CaffeineYesIDoIntent')
         # self.disable_intent('Caffeine_no_intent')
         # LOG.debug('3- Goodbye')
-        self.speak_dialog("StayCaffeinated")
+        self.speak_dialog("stay_caffeinated")
 
     def converse(self, message=None):
         user = self.get_utterance_user(message)
@@ -289,20 +289,20 @@ class CaffeineWizSkill(CommonQuerySkill):
                 return False
             elif not result:
                 # User said no
-                if self.local_config.get("interface", {}).get("wake_word_enabled", True):
-                    self.speak_dialog("HowAboutMore", expect_response=True)
+                if self.local_config.get("interface",
+                                         {}).get("wake_word_enabled", True):
+                    self.speak_dialog("how_about_more", expect_response=True)
                     self.enable_intent('CaffeineContentGoodbyeIntent')
-                    self.request_check_timeout(self.default_intent_timeout, 'CaffeineContentGoodbyeIntent')
+                    self.request_check_timeout(self.default_intent_timeout,
+                                               'CaffeineContentGoodbyeIntent')
                 else:
-                    self.speak_dialog("StayCaffeinated")
+                    self.speak_dialog("stay_caffeinated")
                 return True
             elif result:
                 # User said yes
                 LOG.info(self.results)
                 self._get_drink_text(message)
-                # self.speak(self._get_drink_text())
-                # self.speak("Provided by CaffeineWiz.")
-                self.speak("Provided by CaffeineWiz. Stay caffeinated!")
+                self.speak_dialog("provided_by_caffeinewiz")
                 return True
         return False
 

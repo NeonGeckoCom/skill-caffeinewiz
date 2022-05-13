@@ -16,7 +16,7 @@
 # Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
 # US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
 # China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
-import os.path
+
 import unittest
 
 from copy import deepcopy
@@ -67,7 +67,8 @@ class TestSkill(unittest.TestCase):
         self.assertIsInstance(self.skill.from_caffeine_wiz, list)
         self.assertIsNotNone(self.skill.from_caffeine_informer)
         self.assertIsInstance(self.skill.from_caffeine_informer, list)
-        self.assertTrue(all([d for d in self.skill.from_caffeine_informer if d in self.skill.from_caffeine_wiz]))
+        self.assertTrue(all([d for d in self.skill.from_caffeine_informer
+                             if d in self.skill.from_caffeine_wiz]))
         for d in self.skill.from_caffeine_wiz:
             self.assertIsInstance(d, list)
             self.assertIsInstance(d[0], str)
@@ -113,18 +114,19 @@ class TestSkill(unittest.TestCase):
     def test_handle_caffeine_intent_no_drink(self):
         message = Message("test_message", {}, {})
         self.skill.handle_caffeine_intent(message)
-        self.skill.speak_dialog.assert_called_with("NoDrinkHeard")
+        self.skill.speak_dialog.assert_called_with("no_drink_heard")
 
     def test_handle_caffeine_intent_invalid_drink(self):
         message = Message("test_message", {"drink": "software"}, {})
         self.skill.handle_caffeine_intent(message)
-        self.skill.speak_dialog.assert_called_with("NotFound", {'drink': 'software'})
+        self.skill.speak_dialog.assert_called_with("not_found",
+                                                   {'drink': 'software'})
 
     def test_handle_caffeine_update(self):
         real_get_new_info = self.skill._get_new_info
         self.skill._get_new_info = Mock()
         self.skill.handle_caffeine_update(Message(""))
-        self.skill.speak_dialog.assert_called_with("Updating")
+        self.skill.speak_dialog.assert_called_with("updating")
         self.skill._get_new_info.assert_called_once_with(reply=True)
 
         self.skill._get_new_info = real_get_new_info
@@ -136,16 +138,17 @@ class TestSkill(unittest.TestCase):
     def test_convert_metric(self):
         # ~30mg/250mL
         converted = self.skill.convert_metric(12, 34)
-        self.assertEqual(converted, ('23', '250', 'milliliters'))
+        self.assertEqual(converted, ('23', '250', 'word_milliliters'))
         converted = self.skill.convert_metric(24, 68)
-        self.assertEqual(converted, ('47', '500', 'milliliters'))
+        self.assertEqual(converted, ('47', '500', 'word_milliliters'))
         converted = self.skill.convert_metric(36, 102)
-        self.assertEqual(converted, ('95', '1', 'liter'))
+        self.assertEqual(converted, ('95', '1', 'word_liter'))
 
     def test_handle_goodbye_intent(self):
-        message = Message("recognizer_loop:utterance", {"GoodbyeKeyword": "good bye"})
+        message = Message("recognizer_loop:utterance",
+                          {"goodbye_keyword": "good bye"})
         self.skill.handle_goodbye_intent(message)
-        self.skill.speak_dialog.assert_called_with("StayCaffeinated")
+        self.skill.speak_dialog.assert_called_with("stay_caffeinated")
 
     def test_get_drink_text(self):
         # TODO: Write this test DM
@@ -181,16 +184,21 @@ class TestSkill(unittest.TestCase):
         #     "drinkList_from_caffeine_informer.txt"))
 
         self.assertTrue(self.skill._get_new_info(True))
-        self.skill.speak_dialog.assert_called_once_with("UpdateComplete")
+        self.skill.speak_dialog.assert_called_once_with("update_complete")
         self.skill._add_more_caffeine_data = real_method
 
     def test_clean_drink_name(self):
         self.assertEqual("coffee", self.skill._clean_drink_name("a coffee"))
-        self.assertEqual("coffee", self.skill._clean_drink_name("a cup of coffee"))
-        self.assertEqual("coffee", self.skill._clean_drink_name("a glass of coffee"))
-        self.assertEqual("coffee", self.skill._clean_drink_name("a cup of coffee?"))
-        self.assertEqual("coffee", self.skill._clean_drink_name("a cup of coffee"))
-        self.assertEqual("shot of espresso", self.skill._clean_drink_name("a shot of espresso"))
+        self.assertEqual("coffee",
+                         self.skill._clean_drink_name("a cup of coffee"))
+        self.assertEqual("coffee",
+                         self.skill._clean_drink_name("a glass of coffee"))
+        self.assertEqual("coffee",
+                         self.skill._clean_drink_name("a cup of coffee?"))
+        self.assertEqual("coffee",
+                         self.skill._clean_drink_name("a cup of coffee"))
+        self.assertEqual("shot of espresso",
+                         self.skill._clean_drink_name("a shot of espresso"))
 
         self.assertEqual("", self.skill._clean_drink_name("a cup of"))
 
@@ -206,8 +214,10 @@ class TestSkill(unittest.TestCase):
 
     def test_get_matching_drinks(self):
         self.assertIsInstance(self.skill._get_matching_drinks("coke"), list)
-        self.assertIsInstance(self.skill._get_matching_drinks("coca-cola classic"), list)
-        self.assertIsInstance(self.skill._get_matching_drinks("software"), list)
+        self.assertIsInstance(
+            self.skill._get_matching_drinks("coca-cola classic"), list)
+        self.assertIsInstance(self.skill._get_matching_drinks("software"),
+                              list)
 
     def test_generate_drink_dialog(self):
         # TODO: Write this test DM
