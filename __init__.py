@@ -34,12 +34,13 @@ import pickle
 import urllib.request
 from threading import Event, Thread
 
-from typing import Optional
+from typing import Optional, Tuple
 from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
 from time import sleep
 
 from lingua_franca import load_language
+from mycroft_bus_client import Message
 from neon_utils.skills.common_query_skill import CQSMatchLevel, CommonQuerySkill
 from neon_utils.logger import LOG
 from neon_utils import web_utils
@@ -459,7 +460,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         return [i for i in self.from_caffeine_wiz
                 if i[0] in drink or drink in i[0]]
 
-    def _generate_drink_dialog(self, drink: str, message) -> Optional[(str, list)]:
+    def _generate_drink_dialog(self, drink: str,
+                               message: Message) -> Optional[Tuple[str, list]]:
         """
         Generates the dialog and alternate results for the requested drink
         :param drink: raw input drink to find
