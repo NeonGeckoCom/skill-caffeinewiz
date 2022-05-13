@@ -92,7 +92,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         return None
 
     def initialize(self):
-        goodbye_intent = IntentBuilder("CaffeineContentGoodbyeIntent").require("GoodbyeKeyword").build()
+        goodbye_intent = IntentBuilder("CaffeineContentGoodbyeIntent")\
+            .require("goodbye").build()
         self.register_intent(goodbye_intent, self.handle_goodbye_intent)
         self.disable_intent('CaffeineContentGoodbyeIntent')
 
@@ -126,7 +127,7 @@ class CaffeineWizSkill(CommonQuerySkill):
     @intent_handler(IntentBuilder("CaffeineUpdate").require("UpdateCaffeine"))
     def handle_caffeine_update(self, message):
         LOG.debug(message)
-        self.speak_dialog("Updating")
+        self.speak_dialog("updating")
         t = Thread(target=self._get_new_info, kwargs={"reply": True},
                    daemon=True)
         t.start()
@@ -134,12 +135,12 @@ class CaffeineWizSkill(CommonQuerySkill):
             LOG.error("Timeout waiting for update")
 
     @intent_handler(IntentBuilder("CaffeineContentIntent")
-                    .require("CaffeineKeyword").require("drink"))
+                    .require("query_caffeine").require("drink"))
     def handle_caffeine_intent(self, message):
 
         drink = self._clean_drink_name(message.data.get("drink", None))
         if not drink:
-            self.speak_dialog("NoDrinkHeard")
+            self.speak_dialog("no_drink_heard")
             return
 
         if not self._update_event.isSet():
@@ -158,14 +159,15 @@ class CaffeineWizSkill(CommonQuerySkill):
             if self.neon_core:
                 if len(self.results) == 1:
                     if not self.check_for_signal("CORE_skipWakeWord", -1):
-                        self.speak_dialog("HowAboutMore", expect_response=True)
+                        self.speak_dialog("how_about_more",
+                                          expect_response=True)
                         self.enable_intent('CaffeineContentGoodbyeIntent')
                         self.request_check_timeout(self.default_intent_timeout,
                                                    'CaffeineContentGoodbyeIntent')
                     else:
-                        self.speak_dialog("StayCaffeinated")
+                        self.speak_dialog("stay_caffeinated")
                 else:
-                    self.speak_dialog("MoreDrinks", expect_response=True)
+                    self.speak_dialog("more_drinks", expect_response=True)
                     self.await_confirmation(self.get_utterance_user(message),
                                             "more")
         else:
@@ -207,7 +209,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                 LOG.error(drink)
                 return None
         else:
-            to_speak = self.dialog_renderer.render("NotFound",
+            to_speak = self.dialog_renderer.render("not_found",
                                                    {"drink": drink})
             if self.voc_match(utt, "caffeine"):
                 conf = CQSMatchLevel.CATEGORY
@@ -245,17 +247,17 @@ class CaffeineWizSkill(CommonQuerySkill):
         if caff_oz < 16:
             caff_mg = str(_drink_convert_to_metric(250, caff_mg, caff_oz))
             caff_vol = '250'
-            drink_units = 'milliliters'
+            unit_resource = 'word_milliliters'
         elif caff_oz < 32:
             caff_mg = str(_drink_convert_to_metric(500, caff_mg, caff_oz))
             caff_vol = '500'
-            drink_units = 'milliliters'
+            unit_resource = 'word_milliliters'
         else:
             caff_mg = str(_drink_convert_to_metric(1000, caff_mg, caff_oz))
             caff_vol = '1'
-            drink_units = 'liter'
+            unit_resource = 'word_liter'
         # caff_vol = caff_oz
-        return caff_mg, caff_vol, drink_units
+        return caff_mg, caff_vol, unit_resource
 
     def handle_goodbye_intent(self, message):
         """
@@ -323,19 +325,20 @@ class CaffeineWizSkill(CommonQuerySkill):
                 units = self.preference_unit(message)['measure']
 
                 if units == "metric":
-                    caff_mg, caff_vol, drink_units = \
+                    caff_mg, caff_vol, unit_dialog = \
                         self.convert_metric(oz, caffeine)
                 else:
                     caff_mg = str(caffeine)
                     caff_vol = str(oz)
-                    drink_units = 'ounces'
+                    unit_dialog = 'word_ounces'
 
-                self.speak_dialog('MultipleCaffeine',
+                self.speak_dialog('multiple_drinks',
                                   {'drink': drink,
                                    'caffeine_content': caff_mg,
-                                   'caffeine_units': self.translate('milligrams'),
+                                   'caffeine_units': self.translate(
+                                       'word_milligrams'),
                                    'drink_size': caff_vol,
-                                   'drink_units': drink_units})  # TODO: Translate
+                                   'drink_units': self.translate(unit_dialog)})
                 spoken.append(caff_list[i][0])
                 sleep(0.5)  # Prevent simultaneous speak inserts
             cnt = cnt + 1
@@ -437,11 +440,11 @@ class CaffeineWizSkill(CommonQuerySkill):
                 self.update_skill_settings({"lastUpdate": str(time_check)},
                                            skill_global=True)
                 if reply:
-                    self.speak_dialog("UpdateComplete")
+                    self.speak_dialog("update_complete")
                 success = True
             elif reply:
                 LOG.error("CaffeineWiz source failed to update!")
-                self.speak_dialog("UpdateError")
+                self.speak_dialog("update_error")
         except Exception as e:
             LOG.error(f"An error occurred during the CaffeineWiz update: {e}")
             # self.check_for_signal("WIZ_getting_new_content")
@@ -517,20 +520,20 @@ class CaffeineWizSkill(CommonQuerySkill):
             caff_oz = float(match2[0][1])
         preference_unit = self.preference_unit(message)
         if preference_unit['measure'] == 'metric':
-            caff_mg, caff_vol, drink_units = self.convert_metric(caff_oz,
+            caff_mg, caff_vol, unit_dialog = self.convert_metric(caff_oz,
                                                                  caff_mg)
         else:
             caff_mg = str(caff_mg)
             caff_vol = str(caff_oz)
-            drink_units = 'ounces'
+            unit_dialog = 'word_ounces'
 
-        LOG.info(f"{drink} | {caff_mg} | {caff_vol} | {drink_units}")
-        to_speak = self.dialog_renderer.render('DrinkCaffeine', {
+        LOG.info(f"{drink} | {caff_mg} | {caff_vol} | {unit_dialog}")
+        to_speak = self.dialog_renderer.render('drink_caffeine', {
             'drink': drink,
             'caffeine_content': caff_mg,
-            'caffeine_units': self.translate('milligrams'),
+            'caffeine_units': self.translate('word_milligrams'),
             'drink_size': caff_vol,
-            'drink_units': drink_units})  # TODO: Translate
+            'drink_units': self.translate(unit_dialog)})
         return to_speak
 
 
