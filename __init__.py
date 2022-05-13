@@ -55,8 +55,6 @@ TIME_TO_CHECK = 3600
 class CaffeineWizSkill(CommonQuerySkill):
     def __init__(self):
         super(CaffeineWizSkill, self).__init__(name="CaffeineWizSkill")
-
-        self.results = None  # TODO: Should be dict for multi-user support DM
         self.translate_drinks = {
             'pepsi': 'pepsi cola',
             # 'coke 0': 'coke zero',
@@ -150,14 +148,14 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.speak_dialog('one_moment', private=True)
 
         if self._drink_in_database(drink):
-            dialog = self._generate_drink_dialog(drink, message)
+            dialog, results = self._generate_drink_dialog(drink, message)
             if dialog:
                 self.speak(dialog)
             else:
                 self.speak_dialog("not_found", {'drink': drink})
 
             if self.neon_core:
-                if len(self.results) == 1:
+                if len(results) == 1:
                     if not self.check_for_signal("CORE_skipWakeWord", -1):
                         self.speak_dialog("how_about_more",
                                           expect_response=True)
@@ -190,7 +188,7 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         if self._drink_in_database(drink):
             try:
-                to_speak = self._generate_drink_dialog(drink, message)
+                to_speak, results = self._generate_drink_dialog(drink, message)
                 if not to_speak:
                     # No dialog generated
                     return None
@@ -211,26 +209,27 @@ class CaffeineWizSkill(CommonQuerySkill):
         else:
             to_speak = self.dialog_renderer.render("not_found",
                                                    {"drink": drink})
+            results = None
             if self.voc_match(utt, "caffeine"):
                 conf = CQSMatchLevel.CATEGORY
             else:
                 return None
-        return utt, conf, to_speak, {"user": self.get_utterance_user(message)}
+        return utt, conf, to_speak, {"user": self.get_utterance_user(message),
+                                     "message": message,
+                                     "results": results}
 
     def CQS_action(self, phrase, data):
+        results = data.get("results")
         if self.neon_core:
             self.make_active()
-            if len(self.results) == 1:
-                if not self.check_for_signal("CORE_skipWakeWord", -1):
-                    self.speak_dialog("HowAboutMore", expect_response=True)
-                    self.enable_intent('CaffeineContentGoodbyeIntent')
-                    self.request_check_timeout(self.default_intent_timeout,
-                                               'CaffeineContentGoodbyeIntent')
+            if len(results) == 1:
+                self.speak_dialog("stay_caffeinated")
+            else:
+                if self.ask_yesno("more_drinks") == "yes":
+                    self._speak_alternate_results(data.get("message"), results)
+                    self.speak_dialog("provided_by_caffeinewiz")
                 else:
                     self.speak_dialog("stay_caffeinated")
-            else:
-                self.speak_dialog("MoreDrinks", expect_response=True)
-                self.await_confirmation(data.get("user", "local"), "more")
 
     @staticmethod
     def convert_metric(caff_oz: float, caff_mg: float) -> (str, str, str):
@@ -274,48 +273,22 @@ class CaffeineWizSkill(CommonQuerySkill):
             LOG.error(e)
 
         self.disable_intent('CaffeineContentGoodbyeIntent')
-        # self.disable_intent('CaffeineYesIDoIntent')
-        # self.disable_intent('Caffeine_no_intent')
-        # LOG.debug('3- Goodbye')
         self.speak_dialog("stay_caffeinated")
-
-    def converse(self, message=None):
-        user = self.get_utterance_user(message)
-        LOG.debug(self.actions_to_confirm)
-        if user in self.actions_to_confirm.keys():
-            result = self.check_yes_no_response(message)
-            if result == -1:
-                # This isn't a response, ignore it
-                return False
-            elif not result:
-                # User said no
-                if self.local_config.get("interface",
-                                         {}).get("wake_word_enabled", True):
-                    self.speak_dialog("how_about_more", expect_response=True)
-                    self.enable_intent('CaffeineContentGoodbyeIntent')
-                    self.request_check_timeout(self.default_intent_timeout,
-                                               'CaffeineContentGoodbyeIntent')
-                else:
-                    self.speak_dialog("stay_caffeinated")
-                return True
-            elif result:
-                # User said yes
-                LOG.info(self.results)
-                self._get_drink_text(message)
-                self.speak_dialog("provided_by_caffeinewiz")
-                return True
-        return False
 
     def stop(self):
         pass
 
-    def _get_drink_text(self, message, caff_list=None):
-        # TODO: Just call 'generate_drink_dialog'?
+    def _speak_alternate_results(self, message, caff_list=None):
+        """
+        Speak alternate drink data from caff_list
+        :param message: Message associated with request
+        :param caff_list: List of alternate drinks returned by _generate_drink_dialog
+        """
         cnt = 0
         spoken = []
         if not caff_list:
-            caff_list = self.results
-            LOG.info(caff_list)
+            LOG.error("No results to handle")
+            return
         for i in range(len(caff_list)):
             if caff_list[i][0] not in spoken:
                 oz = float(caff_list[i][1])
@@ -486,32 +459,32 @@ class CaffeineWizSkill(CommonQuerySkill):
         return [i for i in self.from_caffeine_wiz
                 if i[0] in drink or drink in i[0]]
 
-    def _generate_drink_dialog(self, drink: str, message) -> Optional[str]:
+    def _generate_drink_dialog(self, drink: str, message) -> Optional[(str, list)]:
         """
-        Generates the dialog and populates self.results for the requested drink
+        Generates the dialog and alternate results for the requested drink
         :param drink: raw input drink to find
         :param message: message associated with request
         :return: generated dialog to speak
         """
-        self.results = self._get_matching_drinks(drink)
-        LOG.debug(self.results)
-        if len(self.results) == 0:
+        results = self._get_matching_drinks(drink)
+        LOG.debug(results)
+        if len(results) == 0:
             return None
-        if len(self.results) == 1:
+        if len(results) == 1:
             # Return the only result
-            drink = str(self.results[0][0])
-            caff_mg = float(self.results[0][2])
-            caff_oz = float(self.results[0][1])
+            drink = str(results[0][0])
+            caff_mg = float(results[0][2])
+            caff_oz = float(results[0][1])
 
         else:
             # Find the best match from all of the returned results
-            matched_drink_names = [self.results[i][0]
-                                   for i in range(len(self.results))]
+            matched_drink_names = [results[i][0]
+                                   for i in range(len(results))]
             match = difflib.get_close_matches(drink, matched_drink_names, 1)
             if match:
-                match2 = [i for i in self.results if i[0] in match]
+                match2 = [i for i in results if i[0] in match]
             else:
-                match2 = [i for i in self.results
+                match2 = [i for i in results
                           if i[0] in matched_drink_names[0]]
             LOG.debug(match)
             LOG.debug(match2)
@@ -534,7 +507,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             'caffeine_units': self.translate('word_milligrams'),
             'drink_size': caff_vol,
             'drink_units': self.translate(unit_dialog)})
-        return to_speak
+        return to_speak, results
 
 
 def create_skill():
