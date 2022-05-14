@@ -41,7 +41,8 @@ from time import sleep
 
 from lingua_franca import load_language
 from mycroft_bus_client import Message
-from neon_utils.skills.common_query_skill import CQSMatchLevel, CommonQuerySkill
+from neon_utils.skills.common_query_skill import \
+    CQSMatchLevel, CommonQuerySkill
 from neon_utils.logger import LOG
 from neon_utils import web_utils
 from neon_utils.net_utils import check_online
@@ -84,6 +85,11 @@ class CaffeineWizSkill(CommonQuerySkill):
         load_language('en')  # Load for drink name normalization
 
     @property
+    def converse_is_implemented(self):
+        # TODO: Patching ovos-core bug
+        return True
+
+    @property
     def last_updated(self) -> Optional[datetime.datetime]:
         if self.settings.get("lastUpdate"):
             return datetime.datetime.strptime(self.settings["lastUpdate"],
@@ -107,10 +113,11 @@ class CaffeineWizSkill(CommonQuerySkill):
         )) and check_online((
                 "https://www.caffeineinformer.com/the-caffeine-database",
                 "http://caffeinewiz.com/")):
-            # starting a separate process because websites might take a while to respond
+            # starting a separate process because this might take some time
             t = Thread(target=self._get_new_info, daemon=False)
             t.start()
         else:
+            self._update_event.set()
             LOG.info("Using cached caffeine data")
             # Open cached results from the appropriate files:
             with self.file_system.open('drinkList_from_caffeine_wiz.txt',
@@ -119,11 +126,12 @@ class CaffeineWizSkill(CommonQuerySkill):
 
             with self.file_system.open('drinkList_from_caffeine_informer.txt',
                                        'rb') as from_caffeine_informer_file:
-                self.from_caffeine_informer = pickle.load(from_caffeine_informer_file)
+                self.from_caffeine_informer = \
+                    pickle.load(from_caffeine_informer_file)
             # combine them as in get_new_info and add rocket chocolate:
             self._add_more_caffeine_data()
 
-    @intent_handler(IntentBuilder("CaffeineUpdate").require("UpdateCaffeine"))
+    @intent_handler(IntentBuilder("CaffeineUpdate").require("update_caffeine"))
     def handle_caffeine_update(self, message):
         LOG.debug(message)
         self.speak_dialog("updating")
@@ -144,7 +152,9 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         if not self._update_event.isSet():
             self.speak_dialog('one_moment', private=True)
-            self._update_event.wait(30)
+            if not self._update_event.wait(30):
+                LOG.error("Update taking more than 30s, clearing event")
+                self._update_event.set()
         elif self.check_for_signal('CORE_useHesitation', -1):
             self.speak_dialog('one_moment', private=True)
 
@@ -161,18 +171,23 @@ class CaffeineWizSkill(CommonQuerySkill):
                         self.speak_dialog("how_about_more",
                                           expect_response=True)
                         self.enable_intent('CaffeineContentGoodbyeIntent')
-                        self.request_check_timeout(self.default_intent_timeout,
-                                                   'CaffeineContentGoodbyeIntent')
+                        self.request_check_timeout(
+                            self.default_intent_timeout,
+                            'CaffeineContentGoodbyeIntent')
                     else:
                         self.speak_dialog("stay_caffeinated")
                 else:
-                    self.speak_dialog("more_drinks", expect_response=True)
-                    self.await_confirmation(self.get_utterance_user(message),
-                                            "more")
+                    self.activate()
+                    if self.ask_yesno("more_drinks") == "yes":
+                        self._speak_alternate_results(message, results)
+                        self.speak_dialog("provided_by_caffeinewiz")
+                    else:
+                        self.speak_dialog("stay_caffeinated")
         else:
             self.speak_dialog("not_found", {'drink': drink})
 
-    def CQS_match_query_phrase(self, utt, message=None):
+    def CQS_match_query_phrase(self, utt, message: Message = None):
+        LOG.info(message)
         # TODO: Language agnostic parsing here
         if " of " in utt:
             drink = utt.split(" of ", 1)[1]
@@ -215,19 +230,23 @@ class CaffeineWizSkill(CommonQuerySkill):
                 conf = CQSMatchLevel.CATEGORY
             else:
                 return None
+        LOG.info(f"results={results}")
         return utt, conf, to_speak, {"user": self.get_utterance_user(message),
-                                     "message": message,
+                                     "message": message.serialize() if message
+                                     else None,
                                      "results": results}
 
     def CQS_action(self, phrase, data):
         results = data.get("results")
+        message = Message.deserialize(data.get("message")) if \
+            data.get("message") else None
         if self.neon_core:
             self.make_active()
             if len(results) == 1:
                 self.speak_dialog("stay_caffeinated")
             else:
                 if self.ask_yesno("more_drinks") == "yes":
-                    self._speak_alternate_results(data.get("message"), results)
+                    self._speak_alternate_results(message, results)
                     self.speak_dialog("provided_by_caffeinewiz")
                 else:
                     self.speak_dialog("stay_caffeinated")
@@ -283,7 +302,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         """
         Speak alternate drink data from caff_list
         :param message: Message associated with request
-        :param caff_list: List of alternate drinks returned by _generate_drink_dialog
+        :param caff_list: List of alternate drinks as
+            returned by _generate_drink_dialog
         """
         cnt = 0
         spoken = []
@@ -341,14 +361,17 @@ class CaffeineWizSkill(CommonQuerySkill):
         # Update from caffeineinformer
         try:
             # prep the html pages:
-            page = urllib.request.urlopen("https://www.caffeineinformer.com/the-caffeine-database").read()
+            page = urllib.request.urlopen(
+                "https://www.caffeineinformer.com/the-caffeine-database")\
+                .read()
             soup = BeautifulSoup(page, "html.parser")
 
             # extract the parts that we need.
             # note that the html formats are very different, so we are using 2 separate approaches:
             # 1 - using strings and ast.literal:
             raw_j2 = str(soup.find_all('script', type="text/javascript")[2])
-            new_url = raw_j2[:raw_j2.rfind("function pause") - 6][raw_j2.rfind("tbldata = [") + 11:].lower()
+            new_url = raw_j2[:raw_j2.rfind("function pause") - 6][
+                      raw_j2.rfind("tbldata = [") + 11:].lower()
             new = web_utils.strip_tags(new_url)
             self.from_caffeine_informer = list(ast.literal_eval(new))
             # LOG.warning(self.from_caffeine_informer)
