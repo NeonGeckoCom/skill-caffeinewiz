@@ -101,13 +101,11 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.last_updated else datetime.timedelta(hours=1.1)
         LOG.info(tdelta)
         # if more than one hour, calculate and fetch new data again:
-        if any((
-            tdelta.total_seconds() > TIME_TO_CHECK,
-            not self.file_system.exists('drinkList_from_caffeine_informer.txt'),
-            not self.file_system.exists('drinkList_from_caffeine_wiz.txt')
-        )) and check_online((
-                "https://www.caffeineinformer.com/the-caffeine-database",
-                "http://caffeinewiz.com/")):
+        if any((tdelta.total_seconds() > TIME_TO_CHECK,
+                not self.file_system.exists(
+                    'drinkList_from_caffeine_informer.txt'),
+                not self.file_system.exists(
+                    'drinkList_from_caffeine_wiz.txt'))):
             # starting a separate process because this might take some time
             t = Thread(target=self._get_new_info, daemon=False)
             t.start()
