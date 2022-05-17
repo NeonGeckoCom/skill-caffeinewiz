@@ -85,11 +85,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         load_language('en')  # Load for drink name normalization
 
     @property
-    def converse_is_implemented(self):
-        # TODO: Patching ovos-core bug
-        return True
-
-    @property
     def last_updated(self) -> Optional[datetime.datetime]:
         if self.settings.get("lastUpdate"):
             return datetime.datetime.strptime(self.settings["lastUpdate"],
@@ -245,10 +240,15 @@ class CaffeineWizSkill(CommonQuerySkill):
             if len(results) == 1:
                 self.speak_dialog("stay_caffeinated")
             else:
+                # TODO: This is patching poor handling in get_response
+                from neon_utils.signal_utils import wait_for_signal_clear
+                wait_for_signal_clear("isSpeaking", 30)
                 if self.ask_yesno("more_drinks") == "yes":
+                    LOG.info("YES")
                     self._speak_alternate_results(message, results)
                     self.speak_dialog("provided_by_caffeinewiz")
                 else:
+                    LOG.info("NO")
                     self.speak_dialog("stay_caffeinated")
 
     @staticmethod
