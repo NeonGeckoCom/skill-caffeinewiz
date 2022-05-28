@@ -41,6 +41,7 @@ from time import sleep
 
 from lingua_franca import load_language
 from mycroft_bus_client import Message
+from neon_utils.message_utils import get_message_user
 from neon_utils.skills.common_query_skill import \
     CQSMatchLevel, CommonQuerySkill
 from neon_utils.logger import LOG
@@ -224,7 +225,8 @@ class CaffeineWizSkill(CommonQuerySkill):
             else:
                 return None
         LOG.info(f"results={results}")
-        return utt, conf, to_speak, {"user": self.get_utterance_user(message),
+        user = get_message_user(message) if message else 'local'
+        return utt, conf, to_speak, {"user": user,
                                      "message": message.serialize() if message
                                      else None,
                                      "results": results}
