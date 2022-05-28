@@ -1,6 +1,6 @@
 {
     "title": "CaffeineWiz",
-    "url": "https://github.com/NeonGeckoCom/skill-caffeinewiz.git",
+    "url": "https://github.com/NeonGeckoCom/skill-caffeinewiz",
     "summary": "Provides the caffeine content of various drinks on request.",
     "short_description": "Provides the caffeine content of various drinks on request.",
     "description": "The skill provides the functionality to inform the user of the caffeine content of the requested drink (Multiple drinks in a row are possible) by collecting the required information from two data sources: 1.  [http://caffeinewiz.com/](http://caffeinewiz.com/) - the main source of information for the drink\u2019s database 2.  [https://www.caffeineinformer.com/the-caffeine-database](https://www.caffeineinformer.com/the-caffeine-database) - secondary source for any non-duplicate drinks CaffeineWiz uses [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) to pull the tables from the websites above, then strips the html tags, and later formats the results into the comprehensive list. That object is pickled for the future use. The skill will check for updates periodically. You can modify that time period by changing `TIME_TO_CHECK` parameter on top of the file in the init.",
@@ -12,13 +12,7 @@
     "desktopFile": false,
     "warning": "",
     "systemDeps": false,
-    "requirements": {
-        "python": [
-            "neon-utils~=0.6"
-        ],
-        "system": {},
-        "skill": []
-    },
+    "requirements": "No special required packages for this skill.",
     "incompatible_skills": [],
     "platforms": [
         "i386",
@@ -46,7 +40,12 @@
         "reginaneon",
         "NeonDaniel"
     ],
-    "skillname": "CaffeineWiz",
+    "skillname": "skill-caffeinewiz",
     "authorname": "NeonGeckoCom",
-    "foldername": null
+    "foldername": null,
+    "location": "    ${skills}/CaffeineWiz.neon",
+    "files": " <details> <summary>Click to expand.</summary> <br>         ${skills}/CaffeineWiz.neon/drinkList_from_caffeine_informer.txt         ${skills}/CaffeineWiz.neon/drinkList_from_caffeine_wiz.txt         ${skills}/CaffeineWiz.neon/__init__.py         ${skills}/CaffeineWiz.neon/README.md         ${skills}/CaffeineWiz.neon/settings.json         ${skills}/CaffeineWiz.neon/test/intent         ${skills}/CaffeineWiz.neon/dialog/en-us         ${skills}/CaffeineWiz.neon/test         ${skills}/CaffeineWiz.neon/vocab/en-us/Neon.voc         ${skills}/CaffeineWiz.neon/regex/en-us         ${skills}/CaffeineWiz.neon/dialog/de-de         ${skills}/CaffeineWiz.neon/vocab/en-us/YesIDo.voc         ${skills}/CaffeineWiz.neon/test/intent/001.CaffeineContentIntent.intent.json         ${skills}/CaffeineWiz.neon/vocab/de-de/CaffeineKeyword.voc         ${skills}/CaffeineWiz.neon/dialog/de-de/drink.caffeine.dialog         ${skills}/CaffeineWiz.neon/vocab/en-us/UpdateCaffeine.voc         ${skills}/CaffeineWiz.neon/dialog         ${skills}/CaffeineWiz.neon/vocab/en-us         ${skills}/CaffeineWiz.neon/vocab         ${skills}/CaffeineWiz.neon/test/intent/004.NoIntent.intent.json         ${skills}/CaffeineWiz.neon/regex         ${skills}/CaffeineWiz.neon/vocab/de-de         ${skills}/CaffeineWiz.neon/regex/de-de         ${skills}/CaffeineWiz.neon/vocab/en-us/CaffeineKeyword.voc         ${skills}/CaffeineWiz.neon/vocab/de-de/GoodbyeKeyword.voc         ${skills}/CaffeineWiz.neon/vocab/en-us/GoodbyeKeyword.voc         ${skills}/CaffeineWiz.neon/test/intent/003.YesIDoIntent.intent.json         ${skills}/CaffeineWiz.neon/dialog/en-us/drink.caffeine.dialog         ${skills}/CaffeineWiz.neon/test/intent/002.CaffeineContentGoodbyeIntent.intent.json         ${skills}/CaffeineWiz.neon/vocab/en-us/NoIntent.voc         ${skills}/CaffeineWiz.neon/regex/de-de/drink.rx         ${skills}/CaffeineWiz.neon/regex/en-us/drink.rx </details>",
+    "class diagram": "[Click Here](https://0000.us/klatchat/app/files/neon_images/class_diagrams/CaffeineWiz.png)",
+    "available intents": "<details> <summary>Click to expand.</summary> <br> ### GoodbyeKeyword.voc     goodbye     that's all     we're done ### UpdateCaffeine.voc     update caffeine wiz database     update caffeine database ### Neon.voc     neon     leon     nyan ### NoIntent.voc     no i do not     no     not now     i am done     nevermind ### CaffeineKeyword.voc     tell me caffeine content of     how much caffeine is  in     how about caffeine content of     how much caffeine in ### YesIDo.voc     yes i do     i do     i would     yes i would     yes ### GoodbyeKeyword.voc     Auf Wiedersehen     bye     das wars     ende     end     Wir sind fertig ### CaffeineKeyword.voc     koffein </details>",
+    "troubleshooting": "If you are having trouble finding requested drink or would like to add a new drink to the database, please feel free to [contact us](https://neongecko.com/ContactUs). Complete lists of drinks this skill knows can be found at [CaffeineWiz.com](https://caffeinewiz.com) and [caffeine informer](https://www.caffeineinformer.com/the-caffeine-database)."
 }
