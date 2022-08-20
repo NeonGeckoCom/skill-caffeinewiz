@@ -41,12 +41,11 @@ from time import sleep
 
 from lingua_franca import load_language
 from mycroft_bus_client import Message
-from neon_utils.message_utils import get_message_user
+from neon_utils.user_utils import get_user_prefs, get_message_user
 from neon_utils.skills.common_query_skill import \
     CQSMatchLevel, CommonQuerySkill
 from neon_utils.logger import LOG
 from neon_utils import web_utils
-from neon_utils.net_utils import check_online
 
 from mycroft.util.parse import normalize
 from mycroft.skills import intent_handler
@@ -91,6 +90,16 @@ class CaffeineWizSkill(CommonQuerySkill):
             return datetime.datetime.strptime(self.settings["lastUpdate"],
                                               '%Y-%m-%d %H:%M:%S.%f')
         return None
+
+    @property
+    def ww_enabled(self):
+        resp = self.bus.wait_for_response(Message("neon.query_wake_words_state"))
+        if not resp:
+            LOG.warning("No WW Status reported")
+            return None
+        if resp.data.get('enabled', True):
+            return True
+        return False
 
     def initialize(self):
         goodbye_intent = IntentBuilder("CaffeineContentGoodbyeIntent")\
@@ -149,7 +158,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             if not self._update_event.wait(30):
                 LOG.error("Update taking more than 30s, clearing event")
                 self._update_event.set()
-        elif self.check_for_signal('CORE_useHesitation', -1):
+        elif get_user_prefs(message)['response_mode'].get('hesitation'):
             self.speak_dialog('one_moment', private=True)
 
         if self._drink_in_database(drink):
@@ -161,13 +170,13 @@ class CaffeineWizSkill(CommonQuerySkill):
 
             if self.neon_core:
                 if len(results) == 1:
-                    if not self.check_for_signal("CORE_skipWakeWord", -1):
+                    if self.ww_enabled:
                         self.speak_dialog("how_about_more",
                                           expect_response=True)
                         self.enable_intent('CaffeineContentGoodbyeIntent')
                         self.request_check_timeout(
                             self.default_intent_timeout,
-                            'CaffeineContentGoodbyeIntent')
+                            ['CaffeineContentGoodbyeIntent'])
                     else:
                         self.speak_dialog("stay_caffeinated")
                 else:
@@ -287,7 +296,7 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         # Remove any awaiting confirmation
         try:
-            user = self.get_utterance_user(message)
+            user = get_message_user(message)
             self.actions_to_confirm.pop(user)
         except Exception as e:
             LOG.error(e)
@@ -311,12 +320,13 @@ class CaffeineWizSkill(CommonQuerySkill):
             LOG.error("No results to handle")
             return
         for i in range(len(caff_list)):
+            # TODO: Check for stop request
             if caff_list[i][0] not in spoken:
                 oz = float(caff_list[i][1])
                 caffeine = float(caff_list[i][2])
 
                 drink = caff_list[i][0]
-                units = self.preference_unit(message)['measure']
+                units = get_user_prefs(message)['units']['measure']
 
                 if units == "metric":
                     caff_mg, caff_vol, unit_dialog = \
@@ -516,8 +526,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             drink = str(match2[0][0])
             caff_mg = float(match2[0][2])
             caff_oz = float(match2[0][1])
-        preference_unit = self.preference_unit(message)
-        if preference_unit['measure'] == 'metric':
+        if get_user_prefs(message)['units']['measure'] == 'metric':
             caff_mg, caff_vol, unit_dialog = self.convert_metric(caff_oz,
                                                                  caff_mg)
         else:
