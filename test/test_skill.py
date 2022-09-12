@@ -129,8 +129,51 @@ class TestSkill(unittest.TestCase):
         self.skill._get_new_info = real_get_new_info
 
     def test_CQS_action(self):
-        # TODO: After refactor of self.results into CQS data, write this test DM
-        pass
+        phrase = 'test'
+        data = {'results': ['one', 'two']}
+
+        real_ask_yesno = self.skill.ask_yesno
+        self.skill.ask_yesno = Mock()
+
+        real_speak_alternate = self.skill._speak_alternate_results
+        self.skill._speak_alternate_results = Mock()
+
+        # No match
+        self.skill.CQS_action(phrase, {})
+        self.skill.speak_dialog.assert_not_called()
+        self.skill.CQS_action(phrase, {'results': None})
+        self.skill.speak_dialog.assert_not_called()
+        self.skill.CQS_action(phrase, {'results': []})
+        self.skill.speak_dialog.assert_not_called()
+
+        # Single match
+        self.skill.CQS_action(phrase, {'results': ['test']})
+        self.skill.speak_dialog.assert_called_once_with("stay_caffeinated")
+        self.skill.speak_dialog.reset_mock()
+
+        # Multiple matches, no
+        self.skill.ask_yesno.return_value = 'no'
+        self.skill.CQS_action(phrase, data)
+        self.skill.speak_dialog.assert_called_once_with("stay_caffeinated")
+        self.skill.speak_dialog.reset_mock()
+
+        # Multiple matches, no response
+        self.skill.ask_yesno.return_value = None
+        self.skill.CQS_action(phrase, data)
+        self.skill.speak_dialog.assert_called_once_with("stay_caffeinated")
+        self.skill.speak_dialog.reset_mock()
+
+        # Multiple matches, yes response
+        self.skill.ask_yesno.return_value = 'yes'
+        self.skill.CQS_action(phrase, data)
+        self.skill._speak_alternate_results.assert_called_once_with(
+            None, data['results'])
+        self.skill.speak_dialog.assert_called_once_with(
+            "provided_by_caffeinewiz")
+        self.skill.speak_dialog.reset_mock()
+
+        self.skill.ask_yesno = real_ask_yesno
+        self.skill._speak_alternate_results = real_speak_alternate
 
     def test_convert_metric(self):
         # ~30mg/250mL
