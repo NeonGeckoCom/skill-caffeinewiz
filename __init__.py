@@ -78,6 +78,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             "blue frog energy drink": "blu frog energy drink"
             }
 
+        self.default_intent_timeout = 60
         self.from_caffeine_wiz = list()
         self.from_caffeine_informer = list()
         self._update_event = Event()
@@ -202,8 +203,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         if not drink:
             return None
 
-        if not self._update_event.isSet():
-            self._update_event.wait(30)
+        self._update_event.wait(30)
 
         if self._drink_in_database(drink):
             try:
@@ -244,7 +244,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         results = data.get("results")
         message = Message.deserialize(data.get("message")) if \
             data.get("message") else None
-        if self.neon_core:
+        if results:
             self.make_active()
             if len(results) == 1:
                 self.speak_dialog("stay_caffeinated")
