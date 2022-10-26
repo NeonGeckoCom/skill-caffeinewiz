@@ -16,9 +16,9 @@ CaffeineWiz uses [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/b
 The skill will check for updates periodically. You can modify that time period by changing `TIME_TO_CHECK` parameter on top of the file in the init.
 
 ## Examples
-* "Tell me caffeine content of Pepsi."
+* "Tell me the caffeine content of Pepsi."
 * "How much caffeine is in Starbucks Blonde?"
-* "Tell me caffeine content of Rocket Chocolate."
+* "Tell me the caffeine content of Rocket Chocolate."
 
 ## Troubleshooting
 
