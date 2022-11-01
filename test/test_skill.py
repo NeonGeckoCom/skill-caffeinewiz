@@ -59,7 +59,10 @@ class TestSkill(unittest.TestCase):
         self.assertIsInstance(self.skill, CommonQuerySkill)
         self.assertIsInstance(self.skill.translate_drinks, dict)
 
+        self.skill._update_event.wait()
+
         self.skill._get_new_info()
+        self.assertTrue(self.skill._update_event.is_set())
         self.assertIsNotNone(self.skill.from_caffeine_wiz)
         self.assertIsInstance(self.skill.from_caffeine_wiz, list)
         self.assertIsNotNone(self.skill.from_caffeine_informer)
