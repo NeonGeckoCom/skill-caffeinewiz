@@ -16,7 +16,8 @@
 # Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
 # US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
 # China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
-
+import json
+import os
 import unittest
 
 from copy import deepcopy
@@ -265,6 +266,119 @@ class TestSkill(unittest.TestCase):
     def test_generate_drink_dialog(self):
         # TODO: Write this test DM
         pass
+
+
+class TestSkillLoading(unittest.TestCase):
+    """
+    Test skill loading, intent registration, and langauge support. Test cases
+    are generic, only class variables should be modified per-skill.
+    """
+    from skill_caffeinewiz import CaffeineWizSkill
+    bus = FakeBus()
+    skill = CaffeineWizSkill()
+    messages = list()
+
+    # Specify skill ID for testing (can be anything)
+    test_skill_id = 'test_skill.test'
+
+    # Specify valid languages to test
+    supported_languages = ["en-us"]
+
+    # Specify skill intents
+    adapt_intents = {f'{test_skill_id}:CaffeineUpdate',
+                     f'{test_skill_id}:CaffeineContentIntent',
+                     f'{test_skill_id}:CaffeineContentGoodbyeIntent'}
+    padatious_intents = set()
+
+    # Specify skill resources
+    regex = {'drink'}  # These are the entities, not necessarily filenames
+    vocab = {"caffeine", "goodbye", "query_caffeine", "update_caffeine"}  # Lowercased .voc file basenames
+    dialog = {"drink_caffeine", "how_about_more", "more_drinks",
+              "no_drink_heard", "not_found", "one_moment",
+              "provided_by_caffeinewiz", "stay_caffeinated", "update_complete",
+              "update_error", "updating", "word_liter", "word_milligrams",
+              "word_milliliters", "word_ounces"}
+    # Default Core Events
+    default_events = ["mycroft.skill.enable_intent",
+                      "mycroft.skill.disable_intent",
+                      "mycroft.skill.set_cross_context",
+                      "mycroft.skill.remove_cross_context",
+                      "intent.service.skills.deactivated",
+                      "intent.service.skills.activated",
+                      "mycroft.skills.settings.changed",
+                      "skill.converse.ping",
+                      "skill.converse.request",
+                      f"{test_skill_id}.activate",
+                      f"{test_skill_id}.deactivate"
+                      ]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.bus.on("message", cls._on_message)
+        cls.skill.config_core["secondary_langs"] = cls.supported_languages
+        cls.skill._startup(cls.bus, cls.test_skill_id)
+
+    @classmethod
+    def _on_message(cls, message):
+        cls.messages.append(json.loads(message))
+
+    def test_skill_setup(self):
+        self.assertEqual(self.skill.skill_id, self.test_skill_id)
+        for msg in self.messages:
+            self.assertEqual(msg["context"]["skill_id"], self.test_skill_id)
+
+    def test_intent_registration(self):
+        registered_adapt = list()
+        registered_padatious = list()
+        registered_vocab = dict()
+        registered_regex = dict()
+        for msg in self.messages:
+            if msg["type"] == "register_intent":
+                registered_adapt.append(msg["data"]["name"])
+            elif msg["type"] == "padatious:register_intent":
+                registered_padatious.append(msg["data"]["name"])
+            elif msg["type"] == "register_vocab":
+                lang = msg["data"]["lang"]
+                if msg['data'].get('regex'):
+                    registered_regex.setdefault(lang, dict())
+                    regex = msg["data"]["regex"].split(
+                        '<', 1)[1].split('>', 1)[0].replace(
+                        self.test_skill_id.replace('.', '_'), '').lower()
+                    registered_regex[lang].setdefault(regex, list())
+                    registered_regex[lang][regex].append(msg["data"]["regex"])
+                else:
+                    registered_vocab.setdefault(lang, dict())
+                    voc_filename = msg["data"]["entity_type"].replace(
+                        self.test_skill_id.replace('.', '_'), '').lower()
+                    registered_vocab[lang].setdefault(voc_filename, list())
+                    registered_vocab[lang][voc_filename].append(
+                        msg["data"]["entity_value"])
+        self.assertEqual(set(registered_adapt), self.adapt_intents)
+        self.assertEqual(set(registered_padatious), self.padatious_intents)
+        for lang in self.supported_languages:
+            if self.vocab:
+                self.assertEqual(set(registered_vocab[lang].keys()), self.vocab)
+            if self.regex:
+                self.assertEqual(set(registered_regex[lang].keys()), self.regex)
+            for voc in self.vocab:
+                # Ensure every vocab file has at least one entry
+                self.assertGreater(len(registered_vocab[lang][voc]), 0)
+            for rx in self.regex:
+                # Ensure every vocab file has exactly one entry
+                self.assertTrue(all((rx in line for line in
+                                     registered_regex[lang][rx])))
+
+    def test_skill_events(self):
+        events = self.default_events + list(self.adapt_intents)
+        for event in events:
+            self.assertIn(event, [e[0] for e in self.skill.events])
+
+    def test_dialog_files(self):
+        for lang in self.supported_languages:
+            for dialog in self.dialog:
+                file = self.skill.find_resource(f"{dialog}.dialog", "dialog",
+                                                lang)
+                self.assertTrue(os.path.isfile(file))
 
 
 if __name__ == '__main__':

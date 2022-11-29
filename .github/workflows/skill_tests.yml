@@ -37,7 +37,7 @@ jobs:
           sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git libpulse-dev
           pip install --upgrade pip
           pip install pytest mock git+https://github.com/NeonGeckoCom/NeonCore#egg=neon_core
-          pip install -r requirements.txt
+          pip install .
       - name: Test Skill
         run: |
           pytest test/test_skill.py
@@ -59,7 +59,7 @@ jobs:
           sudo apt install -y gcc libfann-dev swig libssl-dev portaudio19-dev git libpulse-dev
           pip install --upgrade pip
           pip install ovos-core[skills] pytest mock
-          pip install -r requirements.txt
+          pip install .
       - name: Test Skill
         run: |
           pytest test/test_skill.py
