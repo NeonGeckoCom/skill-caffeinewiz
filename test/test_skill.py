@@ -336,14 +336,16 @@ class TestSkillLoading(unittest.TestCase):
 
     def test_intent_registration(self):
         registered_adapt = list()
-        registered_padatious = list()
+        registered_padatious = dict()
         registered_vocab = dict()
         registered_regex = dict()
         for msg in self.messages:
             if msg["type"] == "register_intent":
                 registered_adapt.append(msg["data"]["name"])
             elif msg["type"] == "padatious:register_intent":
-                registered_padatious.append(msg["data"]["name"])
+                lang = msg["data"]["lang"]
+                registered_padatious.setdefault(lang, list())
+                registered_padatious[lang].append(msg["data"]["name"])
             elif msg["type"] == "register_vocab":
                 lang = msg["data"]["lang"]
                 if msg['data'].get('regex'):
@@ -361,8 +363,10 @@ class TestSkillLoading(unittest.TestCase):
                     registered_vocab[lang][voc_filename].append(
                         msg["data"]["entity_value"])
         self.assertEqual(set(registered_adapt), self.adapt_intents)
-        self.assertEqual(set(registered_padatious), self.padatious_intents)
         for lang in self.supported_languages:
+            if self.padatious_intents:
+                self.assertEqual(set(registered_padatious[lang]),
+                                 self.padatious_intents)
             if self.vocab:
                 self.assertEqual(set(registered_vocab[lang].keys()), self.vocab)
             if self.regex:
