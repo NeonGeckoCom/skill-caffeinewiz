@@ -299,9 +299,9 @@ class TestSkillLoading(unittest.TestCase):
     supported_languages = ["en-us"]
 
     # Specify skill intents as sets
-    adapt_intents = {f'{test_skill_id}:CaffeineUpdate',
-                     f'{test_skill_id}:CaffeineContentIntent',
-                     f'{test_skill_id}:CaffeineContentGoodbyeIntent'}
+    adapt_intents = {'CaffeineUpdate',
+                     'CaffeineContentIntent',
+                     'CaffeineContentGoodbyeIntent'}
     padatious_intents = set()
 
     # regex entities, not necessarily filenames
@@ -320,6 +320,10 @@ class TestSkillLoading(unittest.TestCase):
         cls.bus.on("message", cls._on_message)
         cls.skill.config_core["secondary_langs"] = cls.supported_languages
         cls.skill._startup(cls.bus, cls.test_skill_id)
+        cls.adapt_intents = {f'{cls.test_skill_id}:{intent}'
+                             for intent in cls.adapt_intents}
+        cls.padatious_intents = {f'{cls.test_skill_id}:{intent}'
+                                 for intent in cls.padatious_intents}
 
     @classmethod
     def _on_message(cls, message):
