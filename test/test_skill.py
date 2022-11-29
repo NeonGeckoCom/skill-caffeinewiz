@@ -273,31 +273,10 @@ class TestSkillLoading(unittest.TestCase):
     Test skill loading, intent registration, and langauge support. Test cases
     are generic, only class variables should be modified per-skill.
     """
-    from skill_caffeinewiz import CaffeineWizSkill
+    # Static parameters
     bus = FakeBus()
-    skill = CaffeineWizSkill()
     messages = list()
-
-    # Specify skill ID for testing (can be anything)
     test_skill_id = 'test_skill.test'
-
-    # Specify valid languages to test
-    supported_languages = ["en-us"]
-
-    # Specify skill intents
-    adapt_intents = {f'{test_skill_id}:CaffeineUpdate',
-                     f'{test_skill_id}:CaffeineContentIntent',
-                     f'{test_skill_id}:CaffeineContentGoodbyeIntent'}
-    padatious_intents = set()
-
-    # Specify skill resources
-    regex = {'drink'}  # These are the entities, not necessarily filenames
-    vocab = {"caffeine", "goodbye", "query_caffeine", "update_caffeine"}  # Lowercased .voc file basenames
-    dialog = {"drink_caffeine", "how_about_more", "more_drinks",
-              "no_drink_heard", "not_found", "one_moment",
-              "provided_by_caffeinewiz", "stay_caffeinated", "update_complete",
-              "update_error", "updating", "word_liter", "word_milligrams",
-              "word_milliliters", "word_ounces"}
     # Default Core Events
     default_events = ["mycroft.skill.enable_intent",
                       "mycroft.skill.disable_intent",
@@ -311,6 +290,30 @@ class TestSkillLoading(unittest.TestCase):
                       f"{test_skill_id}.activate",
                       f"{test_skill_id}.deactivate"
                       ]
+
+    # Import and initialize installed skill
+    from skill_caffeinewiz import CaffeineWizSkill
+    skill = CaffeineWizSkill()
+
+    # Specify valid languages to test
+    supported_languages = ["en-us"]
+
+    # Specify skill intents as sets
+    adapt_intents = {f'{test_skill_id}:CaffeineUpdate',
+                     f'{test_skill_id}:CaffeineContentIntent',
+                     f'{test_skill_id}:CaffeineContentGoodbyeIntent'}
+    padatious_intents = set()
+
+    # regex entities, not necessarily filenames
+    regex = {'drink'}
+    # vocab is lowercase .voc file basenames
+    vocab = {"caffeine", "goodbye", "query_caffeine", "update_caffeine"}
+    # dialog is .dialog file basenames (case-sensitive)
+    dialog = {"drink_caffeine", "how_about_more", "more_drinks",
+              "no_drink_heard", "not_found", "one_moment",
+              "provided_by_caffeinewiz", "stay_caffeinated", "update_complete",
+              "update_error", "updating", "word_liter", "word_milligrams",
+              "word_milliliters", "word_ounces"}
 
     @classmethod
     def setUpClass(cls) -> None:
