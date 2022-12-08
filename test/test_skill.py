@@ -442,8 +442,13 @@ class TestSkillIntentMatching(unittest.TestCase):
                         else:
                             name = datum
                             value = None
-                        # We mocked the handler, data is munged
-                        voc_id = f'{self.test_skill_id.replace(".", "_")}{name}'
+                        if name in intent_message.data:
+                            # This is an entity
+                            voc_id = name
+                        else:
+                            # We mocked the handler, data is munged
+                            voc_id = f'{self.test_skill_id.replace(".", "_")}' \
+                                     f'{name}'
                         self.assertIsInstance(intent_message.data.get(voc_id),
                                               str, intent_message.data)
                         if value:
