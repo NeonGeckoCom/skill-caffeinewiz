@@ -207,12 +207,14 @@ class CaffeineWizSkill(CommonQuerySkill):
         if self._drink_in_database(drink):
             try:
                 to_speak, results = self._generate_drink_dialog(drink, message)
+                matched_drink = results[0][0]
+                LOG.debug(matched_drink)
                 if not to_speak:
                     # No dialog generated
                     return None
                 if self.voc_match(utt, "caffeine"):
                     conf = CQSMatchLevel.EXACT
-                elif f" {drink.lower()} " in to_speak.lower():
+                elif matched_drink.lower() in utt.lower():
                     # If the exact drink name was matched
                     # but caffeine not requested, consider this a general match
                     conf = CQSMatchLevel.GENERAL
