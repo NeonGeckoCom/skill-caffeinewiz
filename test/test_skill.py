@@ -82,6 +82,9 @@ class TestSkill(unittest.TestCase):
         null_response = self.skill.CQS_match_query_phrase("what time is it")
         self.assertIsNone(null_response)
 
+        lang_response = self.skill.CQS_match_query_phrase("talk to me in french")
+        self.assertIsNone(lang_response)
+
         query_str = "what is in diet coke"
         general_match = self.skill.CQS_match_query_phrase(query_str)
         self.assertIsInstance(general_match, tuple)
