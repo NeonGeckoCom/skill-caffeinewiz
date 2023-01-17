@@ -137,7 +137,6 @@ class CaffeineWizSkill(CommonQuerySkill):
 
     @intent_handler(IntentBuilder("CaffeineUpdate").require("update_caffeine"))
     def handle_caffeine_update(self, message):
-        LOG.debug(message)
         self.speak_dialog("updating")
         t = Thread(target=self._get_new_info, kwargs={"reply": True},
                    daemon=True)
@@ -208,12 +207,14 @@ class CaffeineWizSkill(CommonQuerySkill):
         if self._drink_in_database(drink):
             try:
                 to_speak, results = self._generate_drink_dialog(drink, message)
+                matched_drink = results[0][0]
+                LOG.debug(matched_drink)
                 if not to_speak:
                     # No dialog generated
                     return None
                 if self.voc_match(utt, "caffeine"):
                     conf = CQSMatchLevel.EXACT
-                elif f" {drink.lower()} " in to_speak.lower():
+                elif matched_drink.lower() in utt.lower():
                     # If the exact drink name was matched
                     # but caffeine not requested, consider this a general match
                     conf = CQSMatchLevel.GENERAL
@@ -372,7 +373,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         try:
             # prep the html pages:
             page = urllib.request.urlopen(
-                "https://www.caffeineinformer.com/the-caffeine-database")\
+                "https://www.caffeineinformer.com/the-caffeine-database",
+                timeout=15)\
                 .read()
             soup = BeautifulSoup(page, "html.parser")
 
@@ -391,7 +393,8 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         # Update from caffeinewiz
         try:
-            htmldoc = urllib.request.urlopen("http://caffeinewiz.com/").read()
+            htmldoc = urllib.request.urlopen("http://caffeinewiz.com/",
+                                             timeout=15).read()
             soup2 = BeautifulSoup(htmldoc, "html.parser")
 
             # 2 - by parsing the table on a given page:
@@ -413,10 +416,9 @@ class CaffeineWizSkill(CommonQuerySkill):
                     parsed_name = normalize(drink[0].replace('-', ' '), 'en')
                     if drink[0] != parsed_name:
                         new_drink = [parsed_name] + drink[1:]
-                        LOG.debug(f"Normalizing {drink[0]} to {new_drink[0]}")
                         drink_list.append(new_drink)
                 except Exception as x:
-                    LOG.error(x)
+                    LOG.exception(x)
         try:
             _normalize_drink_list(self.from_caffeine_informer)
             _normalize_drink_list(self.from_caffeine_wiz)
