@@ -246,7 +246,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         message = Message.deserialize(data.get("message")) if \
             data.get("message") else None
         if results:
-            self.make_active()
             if len(results) == 1:
                 self.speak_dialog("stay_caffeinated")
             else:
