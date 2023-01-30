@@ -180,7 +180,6 @@ class CaffeineWizSkill(CommonQuerySkill):
                     else:
                         self.speak_dialog("stay_caffeinated")
                 else:
-                    self.activate()
                     if self.ask_yesno("more_drinks") == "yes":
                         self._speak_alternate_results(message, results)
                         self.speak_dialog("provided_by_caffeinewiz")
