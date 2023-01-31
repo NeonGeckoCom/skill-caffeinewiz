@@ -180,7 +180,6 @@ class CaffeineWizSkill(CommonQuerySkill):
                     else:
                         self.speak_dialog("stay_caffeinated")
                 else:
-                    self.activate()
                     if self.ask_yesno("more_drinks") == "yes":
                         self._speak_alternate_results(message, results)
                         self.speak_dialog("provided_by_caffeinewiz")
@@ -246,7 +245,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         message = Message.deserialize(data.get("message")) if \
             data.get("message") else None
         if results:
-            self.make_active()
             if len(results) == 1:
                 self.speak_dialog("stay_caffeinated")
             else:
