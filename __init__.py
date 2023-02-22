@@ -32,8 +32,8 @@ import difflib
 import os.path
 import pickle
 import urllib.request
-from threading import Event, Thread
 
+from threading import Event, Thread
 from typing import Optional, Tuple
 from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
@@ -41,10 +41,12 @@ from time import sleep
 
 from lingua_franca import load_language
 from mycroft_bus_client import Message
+from ovos_utils import classproperty
+from ovos_utils.log import LOG
+from ovos_utils.process_utils import RuntimeRequirements
 from neon_utils.user_utils import get_user_prefs, get_message_user
 from neon_utils.skills.common_query_skill import \
     CQSMatchLevel, CommonQuerySkill
-from neon_utils.logger import LOG
 from neon_utils import web_utils
 
 from mycroft.util.parse import normalize
@@ -83,7 +85,19 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_informer = list()
         self._update_event = Event()
 
-        load_language('en')  # Load for drink name normalization
+        load_language('en')  # Load for drink name normalization  TODO: Deprecate this
+
+    @classproperty
+    def runtime_requirements(self):
+        return RuntimeRequirements(network_before_load=False,
+                                   internet_before_load=False,
+                                   gui_before_load=False,
+                                   requires_internet=True,
+                                   requires_network=True,
+                                   requires_gui=False,
+                                   no_internet_fallback=True,
+                                   no_network_fallback=True,
+                                   no_gui_fallback=True)
 
     @property
     def last_updated(self) -> Optional[datetime.datetime]:
