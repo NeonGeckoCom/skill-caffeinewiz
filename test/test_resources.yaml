@@ -1,0 +1,41 @@
+# Specify resources to test here.
+
+# Specify languages to be tested
+languages:
+  - "en-us"
+
+# vocab is lowercase .voc file basenames
+vocab:
+  - "caffeine"
+  - "goodbye"
+  - "query_caffeine"
+  - "update_caffeine"
+
+# dialog is .dialog file basenames (case-sensitive)
+dialog:
+  - "drink_caffeine"
+  - "how_about_more"
+  - "more_drinks"
+  - "no_drink_heard"
+  - "not_found"
+  - "one_moment"
+  - "provided_by_caffeinewiz"
+  - "stay_caffeinated"
+  - "update_complete"
+  - "update_error"
+  - "updating"
+  - "word_liter"
+  - "word_milligrams"
+  - "word_milliliters"
+  - "word_ounces"
+# regex entities, not necessarily filenames
+regex:
+  - drink
+intents:
+  # Padatious intents are the `.intent` file names
+  padatious: []
+  # Adapt intents are the name passed to the constructor
+  adapt:
+    - 'CaffeineUpdate'
+    - 'CaffeineContentIntent'
+    - 'CaffeineContentGoodbyeIntent'
