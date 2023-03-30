@@ -32,3 +32,29 @@ en-us:
         - drink: pepsi
     - tell me the caffeine content of fanta
     - how much caffeine is in a glass of water
+
+unmatched intents:
+  en-us:
+    - what is coke
+    - what is the caffeine content of rice
+    - what is caffeine
+
+common query:
+  en-us:
+    - what is coke caffeine:
+        min_confidence: 0.9
+        callback:
+          - results
+          - message
+    - what is diet coke:
+        min_confidence: 0.5
+        max_confidence: 0.6
+        callback:
+          - results
+          - message
+    - coca cola classic:
+        min_confidence: 0.4
+        max_confidence: 0.5
+        callback:
+          - results
+          - message
