@@ -56,7 +56,7 @@ common query:
           - user
     - coca cola classic:
         min_confidence: 0.4
-        max_confidence: 0.5
+        max_confidence: 0.6
         callback:
           - results
           - message

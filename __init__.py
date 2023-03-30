@@ -239,6 +239,9 @@ class CaffeineWizSkill(CommonQuerySkill):
                 LOG.error(e)
                 LOG.error(drink)
                 return None
+        elif not drink:
+            LOG.debug("No drink in request")
+            return None
         else:
             to_speak = self.dialog_renderer.render("not_found",
                                                    {"drink": drink})
