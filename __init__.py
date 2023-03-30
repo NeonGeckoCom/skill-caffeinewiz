@@ -221,7 +221,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             try:
                 to_speak, results = self._generate_drink_dialog(drink, message)
                 matched_drink = results[0][0]
-                LOG.info(matched_drink)
+                LOG.debug(matched_drink)
                 if not to_speak:
                     # No dialog generated
                     return None
@@ -239,6 +239,9 @@ class CaffeineWizSkill(CommonQuerySkill):
                 LOG.error(e)
                 LOG.error(drink)
                 return None
+        elif drink == utt:
+            LOG.debug("No drink extracted from utterance")
+            return None
         else:
             to_speak = self.dialog_renderer.render("not_found",
                                                    {"drink": drink})
