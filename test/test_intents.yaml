@@ -36,7 +36,7 @@ en-us:
 unmatched intents:
   en-us:
     - what is coke
-    - what is the caffeine content of rice
+    - what is the caffeine content of computer
     - what is caffeine
 
 common query:
@@ -46,15 +46,18 @@ common query:
         callback:
           - results
           - message
+          - user
     - what is diet coke:
         min_confidence: 0.5
         max_confidence: 0.6
         callback:
           - results
           - message
+          - user
     - coca cola classic:
         min_confidence: 0.4
         max_confidence: 0.5
         callback:
           - results
           - message
+          - user
