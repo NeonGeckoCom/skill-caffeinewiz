@@ -40,7 +40,6 @@ unmatched intents:
 
 common query:
   en-us:
-    - what is coke caffeine
     - what is coca cola classic caffeine:
         min_confidence: 0.9
         callback:
