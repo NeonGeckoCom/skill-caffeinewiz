@@ -36,12 +36,12 @@ en-us:
 unmatched intents:
   en-us:
     - what is coke
-    - what is the caffeine content of computer
     - what is caffeine
 
 common query:
   en-us:
-    - what is coke caffeine:
+    - what is coke caffeine
+    - what is coca cola classic caffeine:
         min_confidence: 0.9
         callback:
           - results
