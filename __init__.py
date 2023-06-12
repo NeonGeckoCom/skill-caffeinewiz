@@ -40,7 +40,7 @@ from bs4 import BeautifulSoup
 from time import sleep
 
 from lingua_franca import load_language
-from mycroft_bus_client import Message
+from ovos_bus_client import Message
 from ovos_utils import classproperty
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements

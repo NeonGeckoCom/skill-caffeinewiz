@@ -25,7 +25,7 @@ from os import mkdir
 from os.path import dirname, join, exists
 from mock import Mock
 from ovos_utils.messagebus import FakeBus
-from mycroft_bus_client import Message
+from ovos_bus_client import Message
 from mycroft.skills.skill_loader import SkillLoader
 
 
