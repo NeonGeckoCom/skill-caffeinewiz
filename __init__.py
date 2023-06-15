@@ -39,7 +39,6 @@ from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
 from time import sleep
 
-from lingua_franca import load_language
 from ovos_bus_client import Message
 from ovos_utils import classproperty
 from ovos_utils.log import LOG
@@ -57,8 +56,8 @@ TIME_TO_CHECK = 3600
 
 
 class CaffeineWizSkill(CommonQuerySkill):
-    def __init__(self):
-        super(CaffeineWizSkill, self).__init__(name="CaffeineWizSkill")
+    def __init__(self, **kwargs):
+        CommonQuerySkill.__init__(self, **kwargs)
         self.translate_drinks = {
             'pepsi': 'pepsi cola',
             # 'coke 0': 'coke zero',
@@ -84,8 +83,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_wiz = list()
         self.from_caffeine_informer = list()
         self._update_event = Event()
-
-        load_language('en')  # Load for drink name normalization  TODO: Deprecate this
 
     @classproperty
     def runtime_requirements(self):
@@ -116,6 +113,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             return True
         return False
 
+    # TODO: Move to __init__ after stable ovos-workshop
     def initialize(self):
         goodbye_intent = IntentBuilder("CaffeineContentGoodbyeIntent")\
             .require("goodbye").build()
@@ -559,7 +557,3 @@ class CaffeineWizSkill(CommonQuerySkill):
             'drink_size': caff_vol,
             'drink_units': self.translate(unit_dialog)})
         return to_speak, results
-
-
-def create_skill():
-    return CaffeineWizSkill()
