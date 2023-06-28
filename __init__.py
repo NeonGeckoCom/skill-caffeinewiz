@@ -201,7 +201,6 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.speak_dialog("not_found", {'drink': drink})
 
     def CQS_match_query_phrase(self, utt, message: Message = None):
-        LOG.info(message)
         # TODO: Language agnostic parsing here
         if " of " in utt:
             drink = utt.split(" of ", 1)[1]
@@ -211,6 +210,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             drink = utt
         drink = self._clean_drink_name(drink)
         if not drink:
+            LOG.debug("No drink matched")
             return None
 
         self._update_event.wait(30)
@@ -241,6 +241,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             LOG.debug("No drink extracted from utterance")
             return None
         else:
+            LOG.debug(f"No match for: {drink}")
             to_speak = self.dialog_renderer.render("not_found",
                                                    {"drink": drink})
             results = None
@@ -248,7 +249,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                 conf = CQSMatchLevel.CATEGORY
             else:
                 return None
-        LOG.info(f"results={results}")
+        LOG.info(f"results={results}, to_speak={to_speak}")
         user = get_message_user(message) if message else 'local'
         return utt, conf, to_speak, {"user": user,
                                      "message": message.serialize() if message
