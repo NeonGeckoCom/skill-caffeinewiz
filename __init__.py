@@ -213,7 +213,9 @@ class CaffeineWizSkill(CommonQuerySkill):
             LOG.debug("No drink matched")
             return None
 
-        self._update_event.wait(30)
+        # If we wait very long, CommonQuery will time out
+        if not self._update_event.wait(5):
+            LOG.warning("CaffeineWiz is updating")
 
         if self._drink_in_database(drink):
             try:
