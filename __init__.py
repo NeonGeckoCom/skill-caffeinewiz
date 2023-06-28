@@ -39,8 +39,7 @@ from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
 from time import sleep
 
-from lingua_franca import load_language
-from mycroft_bus_client import Message
+from ovos_bus_client import Message
 from ovos_utils import classproperty
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements
@@ -57,8 +56,7 @@ TIME_TO_CHECK = 3600
 
 
 class CaffeineWizSkill(CommonQuerySkill):
-    def __init__(self):
-        super(CaffeineWizSkill, self).__init__(name="CaffeineWizSkill")
+    def __init__(self, **kwargs):
         self.translate_drinks = {
             'pepsi': 'pepsi cola',
             # 'coke 0': 'coke zero',
@@ -84,8 +82,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_wiz = list()
         self.from_caffeine_informer = list()
         self._update_event = Event()
-
-        load_language('en')  # Load for drink name normalization  TODO: Deprecate this
+        CommonQuerySkill.__init__(self, **kwargs)
 
     @classproperty
     def runtime_requirements(self):
@@ -116,6 +113,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             return True
         return False
 
+    # TODO: Move to __init__ after stable ovos-workshop
     def initialize(self):
         goodbye_intent = IntentBuilder("CaffeineContentGoodbyeIntent")\
             .require("goodbye").build()
@@ -124,16 +122,15 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         tdelta = datetime.datetime.now() - self.last_updated if \
             self.last_updated else datetime.timedelta(hours=1.1)
-        LOG.info(tdelta)
         # if more than one hour, calculate and fetch new data again:
         if any((tdelta.total_seconds() > TIME_TO_CHECK,
                 not self.file_system.exists(
                     'drinkList_from_caffeine_informer.txt'),
                 not self.file_system.exists(
                     'drinkList_from_caffeine_wiz.txt'))):
+            LOG.info("Updating Caffeine data")
             # starting a separate process because this might take some time
-            t = Thread(target=self._get_new_info, daemon=False)
-            t.start()
+            Thread(target=self._get_new_info, daemon=True).start()
         else:
             self._update_event.set()
             LOG.info("Using cached caffeine data")
@@ -203,7 +200,6 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.speak_dialog("not_found", {'drink': drink})
 
     def CQS_match_query_phrase(self, utt, message: Message = None):
-        LOG.info(message)
         # TODO: Language agnostic parsing here
         if " of " in utt:
             drink = utt.split(" of ", 1)[1]
@@ -213,9 +209,12 @@ class CaffeineWizSkill(CommonQuerySkill):
             drink = utt
         drink = self._clean_drink_name(drink)
         if not drink:
+            LOG.debug("No drink matched")
             return None
 
-        self._update_event.wait(30)
+        # If we wait very long, CommonQuery will time out
+        if not self._update_event.wait(5):
+            LOG.warning("CaffeineWiz is updating")
 
         if self._drink_in_database(drink):
             try:
@@ -243,6 +242,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             LOG.debug("No drink extracted from utterance")
             return None
         else:
+            LOG.debug(f"No match for: {drink}")
             to_speak = self.dialog_renderer.render("not_found",
                                                    {"drink": drink})
             results = None
@@ -250,7 +250,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                 conf = CQSMatchLevel.CATEGORY
             else:
                 return None
-        LOG.info(f"results={results}")
+        LOG.info(f"results={results}, to_speak={to_speak}")
         user = get_message_user(message) if message else 'local'
         return utt, conf, to_speak, {"user": user,
                                      "message": message.serialize() if message
@@ -389,8 +389,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             # prep the html pages:
             page = urllib.request.urlopen(
                 "https://www.caffeineinformer.com/the-caffeine-database",
-                timeout=15)\
-                .read()
+                timeout=15).read()
             soup = BeautifulSoup(page, "html.parser")
 
             # extract the parts that we need.
@@ -401,7 +400,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                       raw_j2.rfind("tbldata = [") + 11:].lower()
             new = web_utils.strip_tags(new_url)
             self.from_caffeine_informer = list(ast.literal_eval(new))
-            # LOG.warning(self.from_caffeine_informer)
+            LOG.debug("Updated caffeineinformer data")
         except Exception as e:
             LOG.error(f"Error updating from caffeineinformer: {e}")
             self.from_caffeine_informer = self.from_caffeine_informer or list()
@@ -419,7 +418,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                     (web_utils.chunks([i.text.lower().replace("\n", "")
                                        for i in areatable.findAll('td')
                                        if i.text != "\xa0"], 3)))
-            # LOG.warning(self.from_caffeine_wiz)
+            LOG.debug("Updated caffeinewiz data")
         except Exception as e:
             LOG.error(f"Error updating from caffeinewiz: {e}")
             self.from_caffeine_wiz = self.from_caffeine_wiz or list()
@@ -559,7 +558,3 @@ class CaffeineWizSkill(CommonQuerySkill):
             'drink_size': caff_vol,
             'drink_units': self.translate(unit_dialog)})
         return to_speak, results
-
-
-def create_skill():
-    return CaffeineWizSkill()
