@@ -57,7 +57,6 @@ TIME_TO_CHECK = 3600
 
 class CaffeineWizSkill(CommonQuerySkill):
     def __init__(self, **kwargs):
-        CommonQuerySkill.__init__(self, **kwargs)
         self.translate_drinks = {
             'pepsi': 'pepsi cola',
             # 'coke 0': 'coke zero',
@@ -83,6 +82,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_wiz = list()
         self.from_caffeine_informer = list()
         self._update_event = Event()
+        CommonQuerySkill.__init__(self, **kwargs)
 
     @classproperty
     def runtime_requirements(self):
