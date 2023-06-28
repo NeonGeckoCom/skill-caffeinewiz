@@ -122,13 +122,13 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         tdelta = datetime.datetime.now() - self.last_updated if \
             self.last_updated else datetime.timedelta(hours=1.1)
-        LOG.info(tdelta)
         # if more than one hour, calculate and fetch new data again:
         if any((tdelta.total_seconds() > TIME_TO_CHECK,
                 not self.file_system.exists(
                     'drinkList_from_caffeine_informer.txt'),
                 not self.file_system.exists(
                     'drinkList_from_caffeine_wiz.txt'))):
+            LOG.info("Updating Caffeine data")
             # starting a separate process because this might take some time
             t = Thread(target=self._get_new_info, daemon=False)
             t.start()
@@ -402,7 +402,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                       raw_j2.rfind("tbldata = [") + 11:].lower()
             new = web_utils.strip_tags(new_url)
             self.from_caffeine_informer = list(ast.literal_eval(new))
-            # LOG.warning(self.from_caffeine_informer)
+            LOG.debug("Updated caffeineinformer data")
         except Exception as e:
             LOG.error(f"Error updating from caffeineinformer: {e}")
             self.from_caffeine_informer = self.from_caffeine_informer or list()
@@ -420,7 +420,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                     (web_utils.chunks([i.text.lower().replace("\n", "")
                                        for i in areatable.findAll('td')
                                        if i.text != "\xa0"], 3)))
-            # LOG.warning(self.from_caffeine_wiz)
+            LOG.debug("Updated caffeinewiz data")
         except Exception as e:
             LOG.error(f"Error updating from caffeinewiz: {e}")
             self.from_caffeine_wiz = self.from_caffeine_wiz or list()
