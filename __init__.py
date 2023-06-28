@@ -124,14 +124,13 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.last_updated else datetime.timedelta(hours=1.1)
         # if more than one hour, calculate and fetch new data again:
         if any((tdelta.total_seconds() > TIME_TO_CHECK,
-                not self.file_system.exists(
-                    'drinkList_from_caffeine_informer.txt'),
+                # not self.file_system.exists(
+                #     'drinkList_from_caffeine_informer.txt'),
                 not self.file_system.exists(
                     'drinkList_from_caffeine_wiz.txt'))):
             LOG.info("Updating Caffeine data")
             # starting a separate process because this might take some time
-            t = Thread(target=self._get_new_info, daemon=False)
-            t.start()
+            Thread(target=self._get_new_info, daemon=True).start()
         else:
             self._update_event.set()
             LOG.info("Using cached caffeine data")
@@ -386,26 +385,25 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         # TODO: caffeineinformer update failing DM
         # Update from caffeineinformer
-        try:
-            # prep the html pages:
-            page = urllib.request.urlopen(
-                "https://www.caffeineinformer.com/the-caffeine-database",
-                timeout=15)\
-                .read()
-            soup = BeautifulSoup(page, "html.parser")
-
-            # extract the parts that we need.
-            # note that the html formats are very different, so we are using 2 separate approaches:
-            # 1 - using strings and ast.literal:
-            raw_j2 = str(soup.find_all('script', type="text/javascript")[2])
-            new_url = raw_j2[:raw_j2.rfind("function pause") - 6][
-                      raw_j2.rfind("tbldata = [") + 11:].lower()
-            new = web_utils.strip_tags(new_url)
-            self.from_caffeine_informer = list(ast.literal_eval(new))
-            LOG.debug("Updated caffeineinformer data")
-        except Exception as e:
-            LOG.error(f"Error updating from caffeineinformer: {e}")
-            self.from_caffeine_informer = self.from_caffeine_informer or list()
+        # try:
+        #     # prep the html pages:
+        #     page = urllib.request.urlopen(
+        #         "https://www.caffeineinformer.com/the-caffeine-database",
+        #         timeout=15).read()
+        #     soup = BeautifulSoup(page, "html.parser")
+        #
+        #     # extract the parts that we need.
+        #     # note that the html formats are very different, so we are using 2 separate approaches:
+        #     # 1 - using strings and ast.literal:
+        #     raw_j2 = str(soup.find_all('script', type="text/javascript")[2])
+        #     new_url = raw_j2[:raw_j2.rfind("function pause") - 6][
+        #               raw_j2.rfind("tbldata = [") + 11:].lower()
+        #     new = web_utils.strip_tags(new_url)
+        #     self.from_caffeine_informer = list(ast.literal_eval(new))
+        #     LOG.debug("Updated caffeineinformer data")
+        # except Exception as e:
+        #     LOG.error(f"Error updating from caffeineinformer: {e}")
+        self.from_caffeine_informer = self.from_caffeine_informer or list()
 
         # Update from caffeinewiz
         try:
