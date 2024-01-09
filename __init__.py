@@ -47,9 +47,8 @@ from neon_utils.user_utils import get_user_prefs, get_message_user
 from neon_utils.skills.common_query_skill import \
     CQSMatchLevel, CommonQuerySkill
 from neon_utils import web_utils
-
-from mycroft.util.parse import normalize
-from mycroft.skills import intent_handler
+from ovos_workshop.decorators import intent_handler
+from lingua_franca.parse import normalize
 
 
 TIME_TO_CHECK = 3600
@@ -200,62 +199,66 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.speak_dialog("not_found", {'drink': drink})
 
     def CQS_match_query_phrase(self, utt, message: Message = None):
-        # TODO: Language agnostic parsing here
-        if " of " in utt:
-            drink = utt.split(" of ", 1)[1]
-        elif " in " in utt:
-            drink = utt.split(" in ", 1)[1]
-        else:
-            drink = utt
-        drink = self._clean_drink_name(drink)
-        if not drink:
-            LOG.debug("No drink matched")
-            return None
-
-        # If we wait very long, CommonQuery will time out
-        if not self._update_event.wait(5):
-            LOG.warning("CaffeineWiz is updating")
-
-        if self._drink_in_database(drink):
-            try:
-                to_speak, results = self._generate_drink_dialog(drink, message)
-                matched_drink = results[0][0]
-                LOG.debug(matched_drink)
-                if not to_speak:
-                    # No dialog generated
-                    return None
-                if self.voc_match(utt, "caffeine"):
-                    conf = CQSMatchLevel.EXACT
-                elif matched_drink.lower() in utt.lower():
-                    # If the exact drink name was matched
-                    # but caffeine not requested, consider this a general match
-                    conf = CQSMatchLevel.GENERAL
-                else:
-                    # We didn't match "caffeine" or an exact drink name
-                    # this request isn't for this skill
-                    return None
-            except Exception as e:
-                LOG.error(e)
-                LOG.error(drink)
-                return None
-        elif drink == utt:
-            LOG.debug("No drink extracted from utterance")
-            return None
-        else:
-            LOG.debug(f"No match for: {drink}")
-            to_speak = self.dialog_renderer.render("not_found",
-                                                   {"drink": drink})
-            results = None
-            if self.voc_match(utt, "caffeine"):
-                conf = CQSMatchLevel.CATEGORY
+        try:
+            # TODO: Language agnostic parsing here
+            if " of " in utt:
+                drink = utt.split(" of ", 1)[1]
+            elif " in " in utt:
+                drink = utt.split(" in ", 1)[1]
             else:
+                drink = utt
+            drink = self._clean_drink_name(drink)
+            if not drink:
+                LOG.debug("No drink matched")
                 return None
-        LOG.info(f"results={results}, to_speak={to_speak}")
-        user = get_message_user(message) if message else 'local'
-        return utt, conf, to_speak, {"user": user,
-                                     "message": message.serialize() if message
-                                     else None,
-                                     "results": results}
+
+            # If we wait very long, CommonQuery will time out
+            if not self._update_event.wait(5):
+                LOG.warning("CaffeineWiz is updating")
+
+            if self._drink_in_database(drink):
+                try:
+                    to_speak, results = self._generate_drink_dialog(drink, message)
+                    matched_drink = results[0][0]
+                    LOG.debug(matched_drink)
+                    if not to_speak:
+                        # No dialog generated
+                        return None
+                    if self.voc_match(utt, "caffeine"):
+                        conf = CQSMatchLevel.EXACT
+                    elif matched_drink.lower() in utt.lower():
+                        # If the exact drink name was matched
+                        # but caffeine not requested, consider this a general match
+                        conf = CQSMatchLevel.GENERAL
+                    else:
+                        # We didn't match "caffeine" or an exact drink name
+                        # this request isn't for this skill
+                        return None
+                except Exception as e:
+                    LOG.error(e)
+                    LOG.error(drink)
+                    return None
+            elif drink == utt:
+                LOG.debug("No drink extracted from utterance")
+                return None
+            else:
+                LOG.debug(f"No match for: {drink}")
+                if self.voc_match(utt, "caffeine"):
+                    conf = CQSMatchLevel.CATEGORY
+                    results = None
+                    to_speak = self.dialog_renderer.render("not_found",
+                                                           {"drink": drink})
+                else:
+                    return None
+            LOG.info(f"results={results}, to_speak={to_speak}")
+            user = get_message_user(message) if message else 'local'
+            return utt, conf, to_speak, {"user": user,
+                                         "message": message.serialize() if message
+                                         else None,
+                                         "results": results}
+        except FileNotFoundError as e:
+            LOG.warning(f"Missing resource for lang: {self.lang} - {e}")
+            return None
 
     def CQS_action(self, phrase, data):
         results = data.get("results")
