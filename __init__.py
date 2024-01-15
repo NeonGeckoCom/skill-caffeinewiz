@@ -39,6 +39,7 @@ from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
 from time import sleep
 
+from lingua_franca import load_language
 from ovos_bus_client import Message
 from ovos_utils import classproperty
 from ovos_utils.log import LOG
@@ -82,6 +83,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_informer = list()
         self._update_event = Event()
         CommonQuerySkill.__init__(self, **kwargs)
+        from neon_utils.signal_utils import init_signal_bus
+        init_signal_bus(self.bus)
 
     @classproperty
     def runtime_requirements(self):
@@ -428,6 +431,7 @@ class CaffeineWizSkill(CommonQuerySkill):
 
         # Add Normalized drink names
         def _normalize_drink_list(drink_list):
+            load_language(self.lang)  # Necessary for intent tests
             for drink in drink_list:
                 try:
                     parsed_name = normalize(drink[0].replace('-', ' '), 'en')
