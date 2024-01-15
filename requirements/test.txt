@@ -1,2 +1,1 @@
-# neon-minerva[padatious]~=0.1,>=0.1.1a1
-neon-minerva[padatious]@git+https://github.com/neongeckocom/neon-minerva@FEAT_CommonQueryTests
+neon-minerva[padatious]~=0.1,>=0.1.1a1
