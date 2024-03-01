@@ -1,5 +1,4 @@
-neon-utils~=1.0,!=1.9.0
-# TODO: excluded version patching https://github.com/NeonGeckoCom/neon-utils/pull/503
+neon-utils~=1.0,>=1.9.1a1
 beautifulsoup4~=4.0
 ovos-utils~=0.0, >=0.0.28
 ovos-bus-client~=0.0.3
