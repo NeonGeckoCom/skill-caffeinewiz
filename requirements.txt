@@ -1,4 +1,5 @@
-neon-utils~=1.0,>=1.9.1a1
+neon-utils[network]~=1.0,>=1.9.1a1
+# TODO: network extra patching dependency resolution in tests
 beautifulsoup4~=4.0
 ovos-utils~=0.0, >=0.0.28
 ovos-bus-client~=0.0.3
