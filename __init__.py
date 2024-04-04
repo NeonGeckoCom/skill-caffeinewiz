@@ -78,9 +78,6 @@ class CaffeineWizSkill(CommonQuerySkill):
             "blue frog energy drink": "blu frog energy drink"
             }
 
-        self.default_intent_timeout = 60
-        self.from_caffeine_wiz = list()
-        self.from_caffeine_informer = list()
         self._update_event = Event()
 
         tdelta = datetime.datetime.now() - self.last_updated if \
@@ -92,6 +89,8 @@ class CaffeineWizSkill(CommonQuerySkill):
                 not self.file_system.exists(
                     'drinkList_from_caffeine_wiz.txt'))):
             LOG.info("Updating Caffeine data")
+            self.from_caffeine_wiz = list()
+            self.from_caffeine_informer = list()
             # starting a separate process because this might take some time
             Thread(target=self._get_new_info, daemon=True).start()
         else:
@@ -339,7 +338,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         invalid_entry = ["beverage", "quantity (oz)", "caffeine content (mg)"]
         if invalid_entry in self.from_caffeine_wiz:
             self.from_caffeine_wiz.remove(invalid_entry)
-        sorted(self.from_caffeine_wiz)
+        self.from_caffeine_wiz.sort()
 
     def _get_new_info(self, reply=False):
         """fetches and combines new data from the two caffeine sources"""
