@@ -83,8 +83,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         self.from_caffeine_informer = list()
         self._update_event = Event()
         CommonQuerySkill.__init__(self, **kwargs)
-        from neon_utils.signal_utils import init_signal_bus
-        init_signal_bus(self.bus)
 
     @classproperty
     def runtime_requirements(self):
@@ -271,9 +269,6 @@ class CaffeineWizSkill(CommonQuerySkill):
             if len(results) == 1:
                 self.speak_dialog("stay_caffeinated")
             else:
-                # TODO: This is patching poor handling in get_response
-                from neon_utils.signal_utils import wait_for_signal_clear
-                wait_for_signal_clear("isSpeaking", 30)
                 if self.ask_yesno("more_drinks") == "yes":
                     LOG.info("YES")
                     self._speak_alternate_results(message, results)
@@ -361,10 +356,11 @@ class CaffeineWizSkill(CommonQuerySkill):
                 self.speak_dialog('multiple_drinks',
                                   {'drink': drink,
                                    'caffeine_content': caff_mg,
-                                   'caffeine_units': self.translate(
+                                   'caffeine_units': self.resources.render_dialog(
                                        'word_milligrams'),
                                    'drink_size': caff_vol,
-                                   'drink_units': self.translate(unit_dialog)})
+                                   'drink_units': self.resources.render_dialog(
+                                       unit_dialog)})
                 spoken.append(caff_list[i][0])
                 sleep(0.5)  # Prevent simultaneous speak inserts
             cnt = cnt + 1
@@ -561,7 +557,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         to_speak = self.dialog_renderer.render('drink_caffeine', {
             'drink': drink,
             'caffeine_content': caff_mg,
-            'caffeine_units': self.translate('word_milligrams'),
+            'caffeine_units': self.resources.render_dialog('word_milligrams'),
             'drink_size': caff_vol,
-            'drink_units': self.translate(unit_dialog)})
+            'drink_units': self.resources.render_dialog(unit_dialog)})
         return to_speak, results
