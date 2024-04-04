@@ -161,12 +161,6 @@ class TestSkillMethods(SkillTestCase):
         converted = self.skill.convert_metric(36, 102)
         self.assertEqual(converted, ('95', '1', 'word_liter'))
 
-    def test_handle_goodbye_intent(self):
-        message = Message("recognizer_loop:utterance",
-                          {"goodbye_keyword": "good bye"})
-        self.skill.handle_goodbye_intent(message)
-        self.skill.speak_dialog.assert_called_with("stay_caffeinated")
-
     def test_get_drink_text(self):
         # TODO: Write this test DM
         pass

@@ -7,7 +7,6 @@ languages:
 # vocab is lowercase .voc file basenames
 vocab:
   - "caffeine"
-  - "goodbye"
   - "query_caffeine"
   - "update_caffeine"
 
