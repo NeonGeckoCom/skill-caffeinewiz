@@ -28,9 +28,6 @@ from neon_minerva.tests.skill_unit_test_base import SkillTestCase
 class TestSkillMethods(SkillTestCase):
     def test_00_skill_init(self):
         # Test any parameters expected to be set in init or initialize methods
-        from neon_utils.skills.common_query_skill import CommonQuerySkill
-
-        self.assertIsInstance(self.skill, CommonQuerySkill)
         self.assertIsInstance(self.skill.translate_drinks, dict)
 
         self.skill._update_event.wait()
@@ -163,12 +160,6 @@ class TestSkillMethods(SkillTestCase):
         self.assertEqual(converted, ('47', '500', 'word_milliliters'))
         converted = self.skill.convert_metric(36, 102)
         self.assertEqual(converted, ('95', '1', 'word_liter'))
-
-    def test_handle_goodbye_intent(self):
-        message = Message("recognizer_loop:utterance",
-                          {"goodbye_keyword": "good bye"})
-        self.skill.handle_goodbye_intent(message)
-        self.skill.speak_dialog.assert_called_with("stay_caffeinated")
 
     def test_get_drink_text(self):
         # TODO: Write this test DM

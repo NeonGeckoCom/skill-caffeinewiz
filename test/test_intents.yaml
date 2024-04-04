@@ -47,6 +47,7 @@ common query:
           - results
           - message
           - user
+          - answer
     - what is diet coke:
         min_confidence: 0.5
         max_confidence: 0.6
@@ -54,6 +55,7 @@ common query:
           - results
           - message
           - user
+          - answer
     - coca cola classic:
         min_confidence: 0.4
         max_confidence: 0.6
@@ -61,3 +63,4 @@ common query:
           - results
           - message
           - user
+          - answer

@@ -45,9 +45,8 @@ from ovos_utils import classproperty
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements
 from neon_utils.user_utils import get_user_prefs, get_message_user
-from neon_utils.skills.common_query_skill import \
-    CQSMatchLevel, CommonQuerySkill
 from neon_utils import web_utils
+from ovos_workshop.skills.common_query_skill import CommonQuerySkill, CQSMatchLevel
 from ovos_workshop.decorators import intent_handler
 from lingua_franca.parse import normalize
 
@@ -57,6 +56,7 @@ TIME_TO_CHECK = 3600
 
 class CaffeineWizSkill(CommonQuerySkill):
     def __init__(self, **kwargs):
+        CommonQuerySkill.__init__(self, **kwargs)
         self.translate_drinks = {
             'pepsi': 'pepsi cola',
             # 'coke 0': 'coke zero',
@@ -78,11 +78,35 @@ class CaffeineWizSkill(CommonQuerySkill):
             "blue frog energy drink": "blu frog energy drink"
             }
 
-        self.default_intent_timeout = 60
-        self.from_caffeine_wiz = list()
-        self.from_caffeine_informer = list()
         self._update_event = Event()
-        CommonQuerySkill.__init__(self, **kwargs)
+
+        tdelta = datetime.datetime.now() - self.last_updated if \
+            self.last_updated else datetime.timedelta(hours=1.1)
+        # if more than one hour, calculate and fetch new data again:
+        if any((tdelta.total_seconds() > TIME_TO_CHECK,
+                not self.file_system.exists(
+                    'drinkList_from_caffeine_informer.txt'),
+                not self.file_system.exists(
+                    'drinkList_from_caffeine_wiz.txt'))):
+            LOG.info("Updating Caffeine data")
+            self.from_caffeine_wiz = list()
+            self.from_caffeine_informer = list()
+            # starting a separate process because this might take some time
+            Thread(target=self._get_new_info, daemon=True).start()
+        else:
+            self._update_event.set()
+            LOG.info("Using cached caffeine data")
+            # Open cached results from the appropriate files:
+            with self.file_system.open('drinkList_from_caffeine_wiz.txt',
+                                       'rb') as from_caffeine_wiz_file:
+                self.from_caffeine_wiz = pickle.load(from_caffeine_wiz_file)
+
+            with self.file_system.open('drinkList_from_caffeine_informer.txt',
+                                       'rb') as from_caffeine_informer_file:
+                self.from_caffeine_informer = \
+                    pickle.load(from_caffeine_informer_file)
+            # combine them as in get_new_info and add rocket chocolate:
+            self._add_more_caffeine_data()
 
     @classproperty
     def runtime_requirements(self):
@@ -113,39 +137,6 @@ class CaffeineWizSkill(CommonQuerySkill):
             return True
         return False
 
-    # TODO: Move to __init__ after stable ovos-workshop
-    def initialize(self):
-        goodbye_intent = IntentBuilder("CaffeineContentGoodbyeIntent")\
-            .require("goodbye").build()
-        self.register_intent(goodbye_intent, self.handle_goodbye_intent)
-        self.disable_intent('CaffeineContentGoodbyeIntent')
-
-        tdelta = datetime.datetime.now() - self.last_updated if \
-            self.last_updated else datetime.timedelta(hours=1.1)
-        # if more than one hour, calculate and fetch new data again:
-        if any((tdelta.total_seconds() > TIME_TO_CHECK,
-                not self.file_system.exists(
-                    'drinkList_from_caffeine_informer.txt'),
-                not self.file_system.exists(
-                    'drinkList_from_caffeine_wiz.txt'))):
-            LOG.info("Updating Caffeine data")
-            # starting a separate process because this might take some time
-            Thread(target=self._get_new_info, daemon=True).start()
-        else:
-            self._update_event.set()
-            LOG.info("Using cached caffeine data")
-            # Open cached results from the appropriate files:
-            with self.file_system.open('drinkList_from_caffeine_wiz.txt',
-                                       'rb') as from_caffeine_wiz_file:
-                self.from_caffeine_wiz = pickle.load(from_caffeine_wiz_file)
-
-            with self.file_system.open('drinkList_from_caffeine_informer.txt',
-                                       'rb') as from_caffeine_informer_file:
-                self.from_caffeine_informer = \
-                    pickle.load(from_caffeine_informer_file)
-            # combine them as in get_new_info and add rocket chocolate:
-            self._add_more_caffeine_data()
-
     @intent_handler(IntentBuilder("CaffeineUpdate").require("update_caffeine"))
     def handle_caffeine_update(self, message):
         self.speak_dialog("updating")
@@ -158,19 +149,18 @@ class CaffeineWizSkill(CommonQuerySkill):
     @intent_handler(IntentBuilder("CaffeineContentIntent")
                     .require("query_caffeine").require("drink"))
     def handle_caffeine_intent(self, message):
-
         drink = self._clean_drink_name(message.data.get("drink", None))
         if not drink:
             self.speak_dialog("no_drink_heard")
             return
 
-        if not self._update_event.isSet():
-            self.speak_dialog('one_moment', private=True)
+        if not self._update_event.is_set():
+            self.speak_dialog('one_moment')
             if not self._update_event.wait(30):
                 LOG.error("Update taking more than 30s, clearing event")
                 self._update_event.set()
         elif get_user_prefs(message)['response_mode'].get('hesitation'):
-            self.speak_dialog('one_moment', private=True)
+            self.speak_dialog('one_moment')
 
         if self._drink_in_database(drink):
             dialog, results = self._generate_drink_dialog(drink, message)
@@ -179,23 +169,14 @@ class CaffeineWizSkill(CommonQuerySkill):
             else:
                 self.speak_dialog("not_found", {'drink': drink})
 
-            if self.neon_core:
-                if len(results) == 1:
-                    if self.ww_enabled:
-                        self.speak_dialog("how_about_more",
-                                          expect_response=True)
-                        self.enable_intent('CaffeineContentGoodbyeIntent')
-                        self.request_check_timeout(
-                            self.default_intent_timeout,
-                            ['CaffeineContentGoodbyeIntent'])
-                    else:
-                        self.speak_dialog("stay_caffeinated")
+            if len(results) == 1:
+                self.speak_dialog("stay_caffeinated")
+            else:
+                if self.ask_yesno("more_drinks") == "yes":
+                    self._speak_alternate_results(message, results)
+                    self.speak_dialog("provided_by_caffeinewiz")
                 else:
-                    if self.ask_yesno("more_drinks") == "yes":
-                        self._speak_alternate_results(message, results)
-                        self.speak_dialog("provided_by_caffeinewiz")
-                    else:
-                        self.speak_dialog("stay_caffeinated")
+                    self.speak_dialog("stay_caffeinated")
         else:
             self.speak_dialog("not_found", {'drink': drink})
 
@@ -304,26 +285,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         # caff_vol = caff_oz
         return caff_mg, caff_vol, unit_resource
 
-    def handle_goodbye_intent(self, message):
-        """
-        Note: now the "reply" intents are deactivated,
-              since the user specified the end of the skill
-              by saying "goodbye"
-        """
-
-        # Remove any awaiting confirmation
-        try:
-            user = get_message_user(message)
-            self.actions_to_confirm.pop(user)
-        except Exception as e:
-            LOG.error(e)
-
-        self.disable_intent('CaffeineContentGoodbyeIntent')
-        self.speak_dialog("stay_caffeinated")
-
-    def stop(self):
-        pass
-
     def _speak_alternate_results(self, message, caff_list=None):
         """
         Speak alternate drink data from caff_list
@@ -377,7 +338,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         invalid_entry = ["beverage", "quantity (oz)", "caffeine content (mg)"]
         if invalid_entry in self.from_caffeine_wiz:
             self.from_caffeine_wiz.remove(invalid_entry)
-        sorted(self.from_caffeine_wiz)
+        self.from_caffeine_wiz.sort()
 
     def _get_new_info(self, reply=False):
         """fetches and combines new data from the two caffeine sources"""
@@ -463,8 +424,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         try:
             # TODO: Check for CW and CI success
             if self.from_caffeine_wiz:
-                self.update_skill_settings({"lastUpdate": str(time_check)},
-                                           skill_global=True)
+                self.settings["lastUpdate"] = str(time_check)
                 if reply:
                     self.speak_dialog("update_complete")
                 success = True
@@ -473,7 +433,6 @@ class CaffeineWizSkill(CommonQuerySkill):
                 self.speak_dialog("update_error")
         except Exception as e:
             LOG.error(f"An error occurred during the CaffeineWiz update: {e}")
-            # self.check_for_signal("WIZ_getting_new_content")
         self._update_event.set()
         return success
 
