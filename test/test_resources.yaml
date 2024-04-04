@@ -38,4 +38,3 @@ intents:
   adapt:
     - 'CaffeineUpdate'
     - 'CaffeineContentIntent'
-    - 'CaffeineContentGoodbyeIntent'

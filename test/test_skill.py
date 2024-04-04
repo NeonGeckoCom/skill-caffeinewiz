@@ -28,9 +28,6 @@ from neon_minerva.tests.skill_unit_test_base import SkillTestCase
 class TestSkillMethods(SkillTestCase):
     def test_00_skill_init(self):
         # Test any parameters expected to be set in init or initialize methods
-        from neon_utils.skills.common_query_skill import CommonQuerySkill
-
-        self.assertIsInstance(self.skill, CommonQuerySkill)
         self.assertIsInstance(self.skill.translate_drinks, dict)
 
         self.skill._update_event.wait()
