@@ -1,44 +1,25 @@
 # Changelog
 
-## [1.0.1a5](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.1a5) (2024-03-01)
+## [1.0.2](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.2) (2024-07-09)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.1a4...1.0.1a5)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.2a1...1.0.2)
 
-**Merged pull requests:**
+**Closed issues:**
 
-- Update neon-minerva test dependency to stable spec [\#71](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/71) ([NeonDaniel](https://github.com/NeonDaniel))
+- Resolve test failures [\#38](https://github.com/NeonGeckoCom/skill-caffeinewiz/issues/38)
 
-## [1.0.1a4](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.1a4) (2024-02-05)
+## [1.0.2a1](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.2a1) (2024-04-04)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.1a3...1.0.1a4)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.1...1.0.2a1)
 
-**Merged pull requests:**
+**Fixed bugs:**
 
-- Support ovos-utils 0.1 [\#70](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/70) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.1a3](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.1a3) (2024-01-15)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.1a2...1.0.1a3)
+- \[BUG\] ValueError: not enough values to unpack \(expected 4, got 2\) [\#58](https://github.com/NeonGeckoCom/skill-caffeinewiz/issues/58)
+- Spoken error after "no" to "more\_drinks" [\#44](https://github.com/NeonGeckoCom/skill-caffeinewiz/issues/44)
 
 **Merged pull requests:**
 
-- Update to use shared CommonQuery test class [\#69](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/69) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.1a2](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.1a2) (2024-01-09)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.1a1...1.0.1a2)
-
-**Merged pull requests:**
-
-- Update to better handle CQS exceptions [\#67](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/67) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.1a1](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.1a1) (2024-01-09)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.0...1.0.1a1)
-
-**Merged pull requests:**
-
-- Update Unit Tests [\#68](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/68) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update deprecated references [\#74](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/74) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 
