@@ -483,8 +483,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         :param new_preferences: dict of updated preference values. {key: val}
         """
         LOG.debug(f"Update skill settings with new: {new_preferences}")
-        new_settings = {**self.settings, **new_preferences}
-        self.settings = new_settings
+        for setting in new_preferences:
+            self.settings[setting] = new_preferences[setting]
         self.settings.store()
 
     def _clean_drink_name(self, drink: str) -> str:
