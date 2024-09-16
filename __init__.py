@@ -115,6 +115,9 @@ class CaffeineWizSkill(CommonQuerySkill):
             # combine them as in get_new_info and add rocket chocolate:
             self._add_more_caffeine_data()
 
+        # TODO: Below troubleshooting intent test failures
+        self._update_event.wait()
+
     @classproperty
     def runtime_requirements(self):
         return RuntimeRequirements(network_before_load=False,
