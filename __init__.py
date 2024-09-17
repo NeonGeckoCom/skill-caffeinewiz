@@ -274,6 +274,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             if len(results) == 1:
                 self.speak_dialog("stay_caffeinated")
             else:
+                # This will ask infinitely until the user responds
                 if self.ask_yesno("more_drinks") == "yes":
                     LOG.info("YES")
                     self._speak_alternate_results(message, results)
