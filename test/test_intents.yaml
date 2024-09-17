@@ -62,4 +62,4 @@ common query:
           - message
           - user
 
-ready_event: _update_event
+ready event: _update_event
