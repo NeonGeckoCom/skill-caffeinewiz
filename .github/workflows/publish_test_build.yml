@@ -10,7 +10,8 @@ on:
 
 jobs:
   build_and_publish_pypi:
-    uses: neongeckocom/.github/.github/workflows/publish_alpha_release.yml@master
+    # TODO: Update to `master` branch
+    uses: neongeckocom/.github/.github/workflows/publish_alpha_release.yml@REF_UpdateAlphaReleaseActionVersions
     secrets: inherit
     with:
       version_file: "version.py"
