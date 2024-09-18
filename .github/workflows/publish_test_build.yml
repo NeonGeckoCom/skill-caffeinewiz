@@ -2,8 +2,6 @@
 
 name: Publish Alpha Build
 on:
-  # TODO: Remove dispatch trigger
-  workflow_dispatch:
   push:
     branches:
       - dev
