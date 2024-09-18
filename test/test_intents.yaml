@@ -61,3 +61,5 @@ common query:
           - results
           - message
           - user
+
+ready event: _update_event
