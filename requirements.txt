@@ -1,5 +1,4 @@
-# TODO: network patching dependency resolution
-neon-utils[network]~=1.0,>=1.11.1a3
+neon-utils~=1.12
 beautifulsoup4~=4.0
 ovos-utils~=0.0, >=0.0.28
 ovos-bus-client~=0.0,>=0.0.3
