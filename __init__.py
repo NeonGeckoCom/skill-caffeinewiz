@@ -35,7 +35,6 @@ import urllib.request
 
 from threading import Event, Thread
 from typing import Optional, Tuple
-from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
 from time import sleep
 
@@ -49,6 +48,7 @@ from neon_utils.skills.common_query_skill import \
     CQSMatchLevel, CommonQuerySkill
 from neon_utils import web_utils
 from ovos_workshop.decorators import intent_handler
+from ovos_workshop.intents import IntentBuilder
 from lingua_franca.parse import normalize
 
 
