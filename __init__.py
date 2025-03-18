@@ -284,7 +284,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                     self.speak_dialog("stay_caffeinated")
 
     @staticmethod
-    def convert_metric(caff_oz: float, caff_mg: float) -> (str, str, str):
+    def convert_metric(caff_oz: float, caff_mg: float) -> Tuple[str, str, str]:
         """
         Convert from imperial to metric units
         :param caff_oz: (float) oz from lookup
