@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2022 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # Contributors: Daniel McKnight, Guy Daniels, Elon Gasper, Richard Leeds,
 # Regina Bloomstine, Casimiro Ferreira, Andrii Pernatii, Kirill Hrymailo
 # BSD-3 License
@@ -35,20 +35,20 @@ import urllib.request
 
 from threading import Event, Thread
 from typing import Optional, Tuple
-from adapt.intent import IntentBuilder
 from bs4 import BeautifulSoup
 from time import sleep
-
 from lingua_franca import load_language
 from ovos_bus_client import Message
+from ovos_bus_client.message import dig_for_message
 from ovos_utils import classproperty
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import RuntimeRequirements
 from neon_utils.user_utils import get_user_prefs, get_message_user
-from neon_utils.skills.common_query_skill import \
+from ovos_workshop.skills.common_query_skill import \
     CQSMatchLevel, CommonQuerySkill
 from neon_utils import web_utils
 from ovos_workshop.decorators import intent_handler
+from ovos_workshop.intents import IntentBuilder
 from lingua_franca.parse import normalize
 
 
@@ -84,37 +84,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         self._update_event = Event()
         CommonQuerySkill.__init__(self, **kwargs)
 
-    @classproperty
-    def runtime_requirements(self):
-        return RuntimeRequirements(network_before_load=False,
-                                   internet_before_load=False,
-                                   gui_before_load=False,
-                                   requires_internet=True,
-                                   requires_network=True,
-                                   requires_gui=False,
-                                   no_internet_fallback=True,
-                                   no_network_fallback=True,
-                                   no_gui_fallback=True)
-
-    @property
-    def last_updated(self) -> Optional[datetime.datetime]:
-        if self.settings.get("lastUpdate"):
-            return datetime.datetime.strptime(self.settings["lastUpdate"],
-                                              '%Y-%m-%d %H:%M:%S.%f')
-        return None
-
-    @property
-    def ww_enabled(self):
-        resp = self.bus.wait_for_response(Message("neon.query_wake_words_state"))
-        if not resp:
-            LOG.warning("No WW Status reported")
-            return None
-        if resp.data.get('enabled', True):
-            return True
-        return False
-
-    # TODO: Move to __init__ after stable ovos-workshop
-    def initialize(self):
         goodbye_intent = IntentBuilder("CaffeineContentGoodbyeIntent")\
             .require("goodbye").build()
         self.register_intent(goodbye_intent, self.handle_goodbye_intent)
@@ -146,6 +115,38 @@ class CaffeineWizSkill(CommonQuerySkill):
             # combine them as in get_new_info and add rocket chocolate:
             self._add_more_caffeine_data()
 
+        # TODO: Below troubleshooting intent test failures
+        self._update_event.wait()
+
+    @classproperty
+    def runtime_requirements(self):
+        return RuntimeRequirements(network_before_load=False,
+                                   internet_before_load=False,
+                                   gui_before_load=False,
+                                   requires_internet=True,
+                                   requires_network=True,
+                                   requires_gui=False,
+                                   no_internet_fallback=True,
+                                   no_network_fallback=True,
+                                   no_gui_fallback=True)
+
+    @property
+    def last_updated(self) -> Optional[datetime.datetime]:
+        if self.settings.get("lastUpdate"):
+            return datetime.datetime.strptime(self.settings["lastUpdate"],
+                                              '%Y-%m-%d %H:%M:%S.%f')
+        return None
+
+    @property
+    def ww_enabled(self):
+        resp = self.bus.wait_for_response(Message("neon.query_wake_words_state"))
+        if not resp:
+            LOG.warning("No WW Status reported")
+            return None
+        if resp.data.get('enabled', True):
+            return True
+        return False
+
     @intent_handler(IntentBuilder("CaffeineUpdate").require("update_caffeine"))
     def handle_caffeine_update(self, message):
         self.speak_dialog("updating")
@@ -164,13 +165,13 @@ class CaffeineWizSkill(CommonQuerySkill):
             self.speak_dialog("no_drink_heard")
             return
 
-        if not self._update_event.isSet():
-            self.speak_dialog('one_moment', private=True)
+        if not self._update_event.is_set():
+            self.speak_dialog('one_moment')
             if not self._update_event.wait(30):
                 LOG.error("Update taking more than 30s, clearing event")
                 self._update_event.set()
         elif get_user_prefs(message)['response_mode'].get('hesitation'):
-            self.speak_dialog('one_moment', private=True)
+            self.speak_dialog('one_moment')
 
         if self._drink_in_database(drink):
             dialog, results = self._generate_drink_dialog(drink, message)
@@ -179,35 +180,37 @@ class CaffeineWizSkill(CommonQuerySkill):
             else:
                 self.speak_dialog("not_found", {'drink': drink})
 
-            if self.neon_core:
-                if len(results) == 1:
-                    if self.ww_enabled:
-                        self.speak_dialog("how_about_more",
-                                          expect_response=True)
-                        self.enable_intent('CaffeineContentGoodbyeIntent')
-                        self.request_check_timeout(
-                            self.default_intent_timeout,
-                            ['CaffeineContentGoodbyeIntent'])
-                    else:
-                        self.speak_dialog("stay_caffeinated")
-                else:
-                    if self.ask_yesno("more_drinks") == "yes":
-                        self._speak_alternate_results(message, results)
-                        self.speak_dialog("provided_by_caffeinewiz")
-                    else:
-                        self.speak_dialog("stay_caffeinated")
+            # if self.neon_core:
+            #     if len(results) == 1:
+            #         if self.ww_enabled:
+            #             self.speak_dialog("how_about_more",
+            #                               expect_response=True)
+            #             self.enable_intent('CaffeineContentGoodbyeIntent')
+            #             self.request_check_timeout(
+            #                 self.default_intent_timeout,
+            #                 ['CaffeineContentGoodbyeIntent'])
+            #         else:
+            #             self.speak_dialog("stay_caffeinated")
+            #     else:
+            #         if self.ask_yesno("more_drinks") == "yes":
+            #             self._speak_alternate_results(message, results)
+            #             self.speak_dialog("provided_by_caffeinewiz")
+            #         else:
+            #             self.speak_dialog("stay_caffeinated")
         else:
             self.speak_dialog("not_found", {'drink': drink})
 
-    def CQS_match_query_phrase(self, utt, message: Message = None):
+    def CQS_match_query_phrase(self, phrase: str):
+
+        message = dig_for_message()
         try:
             # TODO: Language agnostic parsing here
-            if " of " in utt:
-                drink = utt.split(" of ", 1)[1]
-            elif " in " in utt:
-                drink = utt.split(" in ", 1)[1]
+            if " of " in phrase:
+                drink = phrase.split(" of ", 1)[1]
+            elif " in " in phrase:
+                drink = phrase.split(" in ", 1)[1]
             else:
-                drink = utt
+                drink = phrase
             drink = self._clean_drink_name(drink)
             if not drink:
                 LOG.debug("No drink matched")
@@ -225,12 +228,14 @@ class CaffeineWizSkill(CommonQuerySkill):
                     if not to_speak:
                         # No dialog generated
                         return None
-                    if self.voc_match(utt, "caffeine"):
+                    if self.voc_match(phrase, "caffeine"):
+                        LOG.info(f"Query is about caffeine ({phrase})")
                         conf = CQSMatchLevel.EXACT
-                    elif matched_drink.lower() in utt.lower():
+                    elif matched_drink.lower() in phrase.lower():
                         # If the exact drink name was matched
                         # but caffeine not requested, consider this a general match
                         conf = CQSMatchLevel.GENERAL
+                        LOG.debug(f"Drink ({matched_drink}) is in utterance ({phrase})")
                     else:
                         # We didn't match "caffeine" or an exact drink name
                         # this request isn't for this skill
@@ -239,12 +244,12 @@ class CaffeineWizSkill(CommonQuerySkill):
                     LOG.error(e)
                     LOG.error(drink)
                     return None
-            elif drink == utt:
+            elif drink == phrase:
                 LOG.debug("No drink extracted from utterance")
                 return None
             else:
                 LOG.debug(f"No match for: {drink}")
-                if self.voc_match(utt, "caffeine"):
+                if self.voc_match(phrase, "caffeine"):
                     conf = CQSMatchLevel.CATEGORY
                     results = None
                     to_speak = self.dialog_renderer.render("not_found",
@@ -253,7 +258,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                     return None
             LOG.info(f"results={results}, to_speak={to_speak}")
             user = get_message_user(message) if message else 'local'
-            return utt, conf, to_speak, {"user": user,
+            return phrase, conf, to_speak, {"user": user,
                                          "message": message.serialize() if message
                                          else None,
                                          "results": results}
@@ -269,6 +274,7 @@ class CaffeineWizSkill(CommonQuerySkill):
             if len(results) == 1:
                 self.speak_dialog("stay_caffeinated")
             else:
+                # This will ask infinitely until the user responds
                 if self.ask_yesno("more_drinks") == "yes":
                     LOG.info("YES")
                     self._speak_alternate_results(message, results)
@@ -278,7 +284,7 @@ class CaffeineWizSkill(CommonQuerySkill):
                     self.speak_dialog("stay_caffeinated")
 
     @staticmethod
-    def convert_metric(caff_oz: float, caff_mg: float) -> (str, str, str):
+    def convert_metric(caff_oz: float, caff_mg: float) -> Tuple[str, str, str]:
         """
         Convert from imperial to metric units
         :param caff_oz: (float) oz from lookup
@@ -314,7 +320,6 @@ class CaffeineWizSkill(CommonQuerySkill):
         # Remove any awaiting confirmation
         try:
             user = get_message_user(message)
-            self.actions_to_confirm.pop(user)
         except Exception as e:
             LOG.error(e)
 
@@ -463,8 +468,7 @@ class CaffeineWizSkill(CommonQuerySkill):
         try:
             # TODO: Check for CW and CI success
             if self.from_caffeine_wiz:
-                self.update_skill_settings({"lastUpdate": str(time_check)},
-                                           skill_global=True)
+                self.update_skill_settings({"lastUpdate": str(time_check)})
                 if reply:
                     self.speak_dialog("update_complete")
                 success = True
@@ -476,6 +480,16 @@ class CaffeineWizSkill(CommonQuerySkill):
             # self.check_for_signal("WIZ_getting_new_content")
         self._update_event.set()
         return success
+
+    def update_skill_settings(self, new_preferences: dict):
+        """
+        Updates skill settings with the passed new_preferences
+        :param new_preferences: dict of updated preference values. {key: val}
+        """
+        LOG.debug(f"Update skill settings with new: {new_preferences}")
+        for setting in new_preferences:
+            self.settings[setting] = new_preferences[setting]
+        self.settings.store()
 
     def _clean_drink_name(self, drink: str) -> str:
         """
