@@ -33,10 +33,26 @@ en-us:
     - tell me the caffeine content of fanta
     - how much caffeine is in a glass of water
 
+uk-ua:
+  CaffeineUpdate:
+    - оновити базу даних caffeine wiz
+    - оновити базу даних кофеїну
+  CaffeineContentIntent:
+    - скільки кофеїну у кока-колі:
+        - drink: кока-колі
+    - розкажи про вміст кофеїну в пепсі:
+        - drink: пепсі
+    - розкажи мені вміст кофеїну в фанті
+    - скільки кофеїну у склянці води
+    - який вміст кофеїну у енергетику
+
 unmatched intents:
   en-us:
     - what is coke
     - what is caffeine
+  uk-ua:
+    - що таке кока-кола
+    - що таке кофеїн
 
 common query:
   en-us:
@@ -48,6 +64,15 @@ common query:
           - message
           - user
     - what is diet coke:
+  uk-ua:
+    - вміст кофеїну в кока-колі
+    - скільки кофеїну у класичній кока-колі:
+        min_confidence: 0.9
+        callback:
+          - results
+          - message
+          - user
+    - що таке дієтична кола:
         min_confidence: 0.5
         max_confidence: 0.6
         callback:
