@@ -450,9 +450,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         # saving and pickling the results:
         if not self.from_caffeine_wiz:
             LOG.info("Loading Caffeine data from bundled defaults")
-            with open(os.path.join(os.path.dirname(__file__), "data",
-                                   "caffeine_wiz_data.pickle"),
-                      'rb') as f:
+            with open(os.path.join(os.path.dirname(__file__),
+                                   "caffeine_wiz_data.pickle"), 'rb') as f:
                 self.from_caffeine_wiz = pickle.load(f)
         with self.file_system.open('drinkList_from_caffeine_wiz.txt',
                                    'wb+') as from_caffeine_wiz_file:
