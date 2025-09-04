@@ -151,9 +151,7 @@ class CaffeineWizSkill(CommonQuerySkill):
 
     @skill_api_method
     def get_caffeine_info(self, request: CaffeineRequest) -> CaffeineResponse:
-        """
-        Get the caffeine content for a given drink.
-        """
+        """Get the caffeine content of a given drink."""
         if not self._update_event.is_set():
             LOG.warning("Waiting for update to complete")
             self._update_event.wait(10)
