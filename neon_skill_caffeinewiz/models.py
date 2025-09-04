@@ -26,6 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import List
 from pydantic import BaseModel, Field
 
 
@@ -48,6 +49,6 @@ class CaffeineInformation(BaseModel):
 
 class CaffeineResponse(BaseModel):
     best_match: CaffeineInformation = Field(description="Best matched result")
-    alternatives: list[CaffeineInformation] = Field(
+    alternatives: List[CaffeineInformation] = Field(
         default=[], description="List of alternative drinks found"
     )
