@@ -250,7 +250,7 @@ class TestSkillMethods(SkillTestCase):
         self.assertIsInstance(info, CaffeineResponse)
         best_match = info.best_match
         self.assertIsInstance(best_match, CaffeineInformation)
-        self.assertNotIn(best_match, CaffeineResponse.alternatives)
+        self.assertNotIn(best_match, info.alternatives)
         self.assertTrue(all([isinstance(a, CaffeineInformation)
                          for a in info.alternatives]))
 
