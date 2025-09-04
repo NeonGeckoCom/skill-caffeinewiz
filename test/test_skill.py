@@ -24,6 +24,8 @@ from mock import Mock
 from ovos_bus_client import Message
 from neon_minerva.tests.skill_unit_test_base import SkillTestCase
 
+from neon_skill_caffeinewiz.models import CaffeineInformation, CaffeineRequest, CaffeineResponse
+
 
 class TestSkillMethods(SkillTestCase):
     def test_00_skill_init(self):
@@ -242,6 +244,20 @@ class TestSkillMethods(SkillTestCase):
     def test_generate_drink_dialog(self):
         # TODO: Write this test DM
         pass
+
+    def test_get_caffeine_info(self):
+        info = self.skill.get_caffeine_info(CaffeineRequest(drink="coke"))
+        self.assertIsInstance(info, CaffeineResponse)
+        best_match = info.best_match
+        self.assertIsInstance(best_match, CaffeineInformation)
+        self.assertNotIn(best_match, CaffeineResponse.alternatives)
+        self.assertTrue(all([isinstance(a, CaffeineInformation)
+                         for a in info.alternatives]))
+
+        self.assertEqual(best_match.name.lower(), "coca-cola classic")
+        self.assertGreater(best_match.caffeine_mg, 0)
+        self.assertGreater(best_match.volume, 0)
+        self.assertNotEqual(best_match.formatted_imperial, best_match.formatted_metric)
 
 
 if __name__ == '__main__':

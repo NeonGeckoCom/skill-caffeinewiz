@@ -47,9 +47,11 @@ from neon_utils.user_utils import get_user_prefs, get_message_user
 from ovos_workshop.skills.common_query_skill import \
     CQSMatchLevel, CommonQuerySkill
 from neon_utils import web_utils
-from ovos_workshop.decorators import intent_handler
+from ovos_workshop.decorators import intent_handler, skill_api_method
 from ovos_workshop.intents import IntentBuilder
 from lingua_franca.parse import normalize
+
+from neon_skill_caffeinewiz.models import CaffeineInformation, CaffeineRequest, CaffeineResponse
 
 
 TIME_TO_CHECK = 3600
@@ -146,6 +148,35 @@ class CaffeineWizSkill(CommonQuerySkill):
         if resp.data.get('enabled', True):
             return True
         return False
+
+    @skill_api_method
+    def get_caffeine_info(self, request: CaffeineRequest) -> CaffeineResponse:
+        """
+        Get the caffeine content for a given drink.
+        """
+        if not self._update_event.is_set():
+            LOG.warning("Waiting for update to complete")
+            self._update_event.wait(10)
+        if not self._drink_in_database(request.drink):
+            raise ValueError(f"No data for drink: {request.drink}")
+        results = self._get_matching_drinks(request.drink)
+        drinks = []
+        for result in results:
+            formatted_imperial = f"{result[2]}mg/{result[1]}oz"
+            metric_mg, metric_vol, metric_unit = self.convert_metric(result[1],
+                                                                     result[2])
+            if metric_unit == 'word_liter':
+                metric_vol = 1000
+            else:
+                metric_vol = int(metric_vol)
+            formatted_metric = f"{metric_mg}mg/{metric_vol}mL"
+            drinks.append(CaffeineInformation(name=result[0],
+                                              caffeine_mg=float(result[2]),
+                                              volume=float(result[1]),
+                                              formatted_imperial=formatted_imperial,
+                                              formatted_metric=formatted_metric,
+                                              source="caffeinewiz"))
+        return CaffeineResponse(best_match=drinks[0], alternatives=drinks[1:])
 
     @intent_handler(IntentBuilder("CaffeineUpdate").require("update_caffeine"))
     def handle_caffeine_update(self, message):
