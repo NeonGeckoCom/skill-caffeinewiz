@@ -163,8 +163,8 @@ class CaffeineWizSkill(CommonQuerySkill):
         drinks = []
         for result in results:
             formatted_imperial = f"{result[2]}mg/{result[1]}oz"
-            metric_mg, metric_vol, metric_unit = self.convert_metric(result[1],
-                                                                     result[2])
+            metric_mg, metric_vol, metric_unit = self.convert_metric(float(result[1]),
+                                                                     float(result[2]))
             if metric_unit == 'word_liter':
                 metric_vol = 1000
             else:
