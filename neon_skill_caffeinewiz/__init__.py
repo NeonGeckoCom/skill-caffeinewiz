@@ -157,9 +157,10 @@ class CaffeineWizSkill(CommonQuerySkill):
         if not self._update_event.is_set():
             LOG.warning("Waiting for update to complete")
             self._update_event.wait(10)
-        if not self._drink_in_database(request.drink):
+        drink = self.translate_drinks.get(request.drink) or request.drink
+        if not self._drink_in_database(drink):
             raise ValueError(f"No data for drink: {request.drink}")
-        results = self._get_matching_drinks(request.drink)
+        results = self._get_matching_drinks(drink)
         drinks = []
         for result in results:
             formatted_imperial = f"{result[2]}mg/{result[1]}oz"
