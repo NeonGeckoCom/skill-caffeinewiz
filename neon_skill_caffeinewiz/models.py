@@ -26,4 +26,29 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__version__ = "3.0.0"
+from typing import List
+from pydantic import BaseModel, Field
+
+
+class CaffeineRequest(BaseModel):
+    drink: str = Field(description="Name of the drink to get information for")
+
+
+class CaffeineInformation(BaseModel):
+    name: str = Field(description="Name of the drink")
+    caffeine_mg: float = Field(description="Amount of caffeine in milligrams")
+    volume: float = Field(description="Volume of the drink in oz")
+    source: str = Field(description="Source of the information")
+    formatted_imperial: str = Field(
+        description="Formatted string with caffeine and volume in imperial units"
+    )
+    formatted_metric: str = Field(
+        description="Formatted string with caffeine and volume in metric units"
+    )
+
+
+class CaffeineResponse(BaseModel):
+    best_match: CaffeineInformation = Field(description="Best matched result")
+    alternatives: List[CaffeineInformation] = Field(
+        default=[], description="List of alternative drinks found"
+    )

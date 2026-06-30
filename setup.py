@@ -30,14 +30,14 @@ from setuptools import setup
 from os import getenv, path, walk
 
 SKILL_NAME = "skill-caffeinewiz"
-SKILL_PKG = SKILL_NAME.replace('-', '_')
+SKILL_PKG = "neon_" + SKILL_NAME.replace('-', '_')
 # skill_id=package_name:SkillClass
 PLUGIN_ENTRY_POINT = f'{SKILL_NAME}.neongeckocom={SKILL_PKG}:CaffeineWizSkill'
 BASE_PATH = path.abspath(path.dirname(__file__))
 
 
 def get_requirements(requirements_filename: str):
-    requirements_file = path.join(BASE_PATH, requirements_filename)
+    requirements_file = path.join(BASE_PATH, "requirements", requirements_filename)
     with open(requirements_file, 'r', encoding='utf-8') as r:
         requirements = r.readlines()
     requirements = [r.strip() for r in requirements if r.strip()
@@ -59,8 +59,8 @@ def get_requirements(requirements_filename: str):
 
 def find_resource_files():
     resource_base_dirs = ("locale", "ui", "vocab", "dialog", "regex", "data")
-    base_dir = BASE_PATH
-    package_data = ["skill.json"]
+    base_dir = path.join(BASE_PATH, SKILL_PKG)
+    package_data = ["skill.json", "*.pickle"]
     for res in resource_base_dirs:
         if path.isdir(path.join(base_dir, res)):
             for (directory, _, files) in walk(path.join(base_dir, res)):
@@ -89,12 +89,11 @@ setup(
     url=f'https://github.com/NeonGeckoCom/{SKILL_NAME}',
     license='BSD-3-Clause',
     install_requires=get_requirements("requirements.txt"),
-    extras_require={"test": get_requirements("requirements/test.txt")},
+    extras_require={"test": get_requirements("test.txt")},
     author='Neongecko',
     author_email='developers@neon.ai',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    package_dir={SKILL_PKG: ""},
     packages=[SKILL_PKG],
     package_data={SKILL_PKG: find_resource_files()},
     include_package_data=True,
