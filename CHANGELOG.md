@@ -1,80 +1,36 @@
 # Changelog
 
-## [1.0.3a9](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.3a9) (2025-03-19)
+## [2.0.1a4](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/2.0.1a4) (2026-06-25)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.3a8...1.0.3a9)
-
-**Merged pull requests:**
-
-- Update actions to use `master` branch [\#86](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/86) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.3a8](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.3a8) (2025-03-19)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.3a7...1.0.3a8)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/2.0.1a3...2.0.1a4)
 
 **Merged pull requests:**
 
-- Remove stray line added to `test_intents.yaml` [\#85](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/85) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update dependencies for stable release [\#94](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/94) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [1.0.3a7](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.3a7) (2025-03-18)
+## [2.0.1a3](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/2.0.1a3) (2025-09-04)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.3a6...1.0.3a7)
-
-**Merged pull requests:**
-
-- Fix `convert_metric` annotation to resolve linter warning [\#84](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/84) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.3a6](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.3a6) (2025-03-18)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.3a5...1.0.3a6)
-
-**Implemented enhancements:**
-
-- \[FEAT\] Refactor to extend `ovos_workshop.skills.common_query_skill.CommonQuerySkill` [\#75](https://github.com/NeonGeckoCom/skill-caffeinewiz/issues/75)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/2.0.1a2...2.0.1a3)
 
 **Merged pull requests:**
 
-- Refactor to extend ovos\_workshop.CommonQuerySkill [\#77](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/77) ([NeonDaniel](https://github.com/NeonDaniel))
+- Implement Skill API method [\#92](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/92) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [1.0.3a5](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.3a5) (2025-03-11)
+## [2.0.1a2](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/2.0.1a2) (2025-09-03)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.3a4...1.0.3a5)
-
-**Merged pull requests:**
-
-- Update automation, gitignore, and license notices [\#83](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/83) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.3a4](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.3a4) (2024-09-18)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.3a3...1.0.3a4)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/2.0.1a1...2.0.1a2)
 
 **Merged pull requests:**
 
-- Resolve PyPI Release Failures [\#81](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/81) ([NeonDaniel](https://github.com/NeonDaniel))
+- Refactor into a structure that supports editable installation [\#91](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/91) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [1.0.3a3](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.3a3) (2024-09-18)
+## [2.0.1a1](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/2.0.1a1) (2025-07-03)
 
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.3a2...1.0.3a3)
-
-**Merged pull requests:**
-
-- Add `workflow_dispatch` build trigger to diagnose build errors [\#80](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/80) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.3a2](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.3a2) (2024-09-18)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.3a1...1.0.3a2)
+[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/2.0.0...2.0.1a1)
 
 **Merged pull requests:**
 
-- Update PyPI shared action to troubleshoot GHA failure [\#79](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/79) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [1.0.3a1](https://github.com/NeonGeckoCom/skill-caffeinewiz/tree/1.0.3a1) (2024-09-18)
-
-[Full Changelog](https://github.com/NeonGeckoCom/skill-caffeinewiz/compare/1.0.2...1.0.3a1)
-
-**Merged pull requests:**
-
-- Update dependencies to allow for latest OVOS packages [\#78](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/78) ([NeonDaniel](https://github.com/NeonDaniel))
+- Ukrainian Translation [\#90](https://github.com/NeonGeckoCom/skill-caffeinewiz/pull/90) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 
